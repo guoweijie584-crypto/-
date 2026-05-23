@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 last_updated: "2026-05-23T21:47:00+08:00"
-last_activity: "2026-05-23 — Quick task complete: expanded to five stages with ultimate tasks."
+last_activity: "2026-05-23 — Phase 3 Plan 03-02 complete: local AI-style narrator, title, and comment fallback."
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
-  percent: 50
+  total_plans: 9
+  completed_plans: 8
+  percent: 89
 ---
 
 # Project State
@@ -25,17 +25,17 @@ See: .planning/PROJECT.md (updated 2026-05-23)
 ## Current Position
 
 Phase: 3 of 4 (Culture, Narration, And Route Reward)
-Plan: 0 of 3 in current phase
-Status: Ready to plan
-Last activity: 2026-05-23 — Quick task complete: expanded to five stages with ultimate tasks.
+Plan: 2 of 3 in current phase
+Status: In Progress
+Last activity: 2026-05-23 — Phase 3 Plan 03-02 complete: local AI-style narrator, title, and comment fallback.
 
-Progress: [█████░░░░░] 50%
+Progress: [█████████░] 89%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 6
+- Total plans completed: 8 of 9 planned
 - Average duration: N/A
 - Total execution time: 0.0 hours
 
@@ -72,10 +72,16 @@ Recent decisions affecting current work:
 - Phase 2 planning: execute in three waves: 02-01 weapons/upgrades, 02-02 stage objectives/enemies, 02-03 boss/victory/run summary.
 - Phase 2 execution: `mountGame()` now exposes weapon selection, stage snapshots, Boss snapshots, and `runSummary` for Phase 3.
 - Phase 2 execution: victory emits `game:completed` with selected weapon, kills, remaining HP, completion time, victory flag, stages, echo fragments, boss phase, selected upgrades, and damage taken.
+- Phase 3 planning: v1 culture and route reward now follow the current five-point route: 老街 -> 古井 -> 石桥 -> 园林 -> 城楼.
 
 ### Pending Todos
 
-- Run `$gsd-plan-phase 3` to plan culture cards, local narrator fallback, travel card, and route reward.
+- Execute `.planning/phases/SHPL-03-culture-narration-and-route-reward/03-03-PLAN.md` to render the final travel card and five-point route recommendation.
+
+### Phase 3 Execution
+
+- Plan 03-01 complete: five culture-card records now include structured demo fields; app state deduplicates card unlocks; culture unlocks render in `#culture-panel`.
+- Plan 03-02 complete: local narrator helpers generate onboarding, stage, unlock, completion, title, comment, and route copy without network calls.
 
 ### Quick Tasks Completed
 

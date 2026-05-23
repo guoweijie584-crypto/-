@@ -17,15 +17,15 @@ Requirements for the initial hackathon MVP. Each maps to exactly one roadmap pha
 
 - [ ] **GAME-01**: User can choose one of three weapons before entering the city: sword, blade, or spear.
 - [ ] **GAME-02**: User experiences distinct weapon behavior: sword is agile with sword-wave identity, blade has larger sweep impact, and spear has thrust/dash penetration.
-- [ ] **GAME-03**: User can progress through three stages: 老街灯影阵, 古井回声阵, and 城楼镇妖阵.
+- [ ] **GAME-03**: User can progress through five stages: 老街灯影阵, 古井回声阵, 石桥渡影阵, 园林迷踪阵, and 城楼镇妖阵.
 - [ ] **GAME-04**: User can fight stage-appropriate enemies including 灯影妖, 纸人怪, 回声/井影类敌人, and 雾甲守将.
 - [ ] **GAME-05**: User can complete the final boss encounter and reach a clear win state within a 3-5 minute target experience.
 
 ### Cultural Content
 
-- [ ] **CULT-01**: User unlocks a culture card after clearing 老街灯影阵.
-- [ ] **CULT-02**: User unlocks a culture card after clearing 古井回声阵.
-- [ ] **CULT-03**: User unlocks a culture card after clearing 城楼镇妖阵.
+- [ ] **CULT-01**: User unlocks a culture card after each of the five stage clears.
+- [ ] **CULT-02**: User can view culture cards for 老街灯影阵 and 古井回声阵.
+- [ ] **CULT-03**: User can view culture cards for 石桥渡影阵, 园林迷踪阵, and 城楼镇妖阵.
 - [ ] **CULT-04**: Each culture card is backed by structured replaceable data with `spotId`, `title`, `sourceNote`, `unlockStage`, and `routeOrder`.
 
 ### Narration And AI Fallback
@@ -38,7 +38,7 @@ Requirements for the initial hackathon MVP. Each maps to exactly one roadmap pha
 
 - [ ] **ROUTE-01**: User receives a final 江湖游历卡 after completing the run.
 - [ ] **ROUTE-02**: The travel card shows selected weapon, performance summary, unlocked culture cards, generated title, and completion comment.
-- [ ] **ROUTE-03**: User receives a real-world route recommendation ordered as 老街 -> 古井 -> 城楼 for the demo content.
+- [ ] **ROUTE-03**: User receives a real-world route recommendation ordered as 老街 -> 古井 -> 石桥 -> 园林 -> 城楼 for the demo content.
 
 ### Mobile And PWA Readiness
 
@@ -118,13 +118,13 @@ Explicitly excluded from v1 to protect the 3-5 minute MVP.
 ## User Stories
 
 - As a visitor, I can scan into a short Jianghu action game and understand the scenic route through play.
-- As a visitor, I can defeat three scenic-stage challenges and unlock cultural story cards as rewards.
+- As a visitor, I can defeat five scenic-stage challenges and unlock cultural story cards as rewards.
 - As a visitor, I can receive a personalized title, travel card, and route suggestion after clearing the game.
 - As a scenic-area operator, I can see how the demo turns attractions into an interactive route entry point.
 
 ## Acceptance Criteria
 
-- The v1 loop is complete when a user can start, choose a weapon, clear three stages, defeat the boss, unlock three culture cards, receive a title/comment/travel card, and see the 老街 -> 古井 -> 城楼 route.
+- The v1 loop is complete when a user can start, choose a weapon, clear five stages, defeat the boss, unlock five culture cards, receive a title/comment/travel card, and see the 老街 -> 古井 -> 石桥 -> 园林 -> 城楼 route.
 - The v1 loop is demo-ready when it works on desktop and phone viewports without requiring a real AI API.
 - Cultural facts are not generated freely; they come from replaceable structured data.
 

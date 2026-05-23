@@ -133,9 +133,11 @@ export function renderShell(root, state, content) {
       <aside id="culture-panel" class="panel compact-panel culture-panel" aria-label="文化线索">
         <div class="panel-title">
           <i data-lucide="badge-info"></i>
-          <h2>文化线索待解锁</h2>
+          <h2 data-culture="heading">文化线索待解锁</h2>
         </div>
-        <p>${content.cultureCards[0].teaser}</p>
+        <div data-culture="body">
+          <p>${content.cultureCards[0].teaser}</p>
+        </div>
       </aside>
 
       <aside id="completion-panel" class="panel compact-panel completion-panel" aria-label="江湖游历卡">
@@ -173,7 +175,7 @@ export function renderShell(root, state, content) {
     weaponList.appendChild(button);
   });
 
-  shell.querySelector('[data-copy="narrator"]').textContent = content.uiPlaceholders.narrator;
+  shell.querySelector('[data-copy="narrator"]').textContent = state.getSnapshot().narratorText || content.uiPlaceholders.narrator;
 
   createIcons({
     icons: {
@@ -212,6 +214,69 @@ export function renderShell(root, state, content) {
     shell.querySelectorAll('.weapon-choice').forEach((button) => {
       button.classList.toggle('is-active', button.dataset.weapon === weaponId);
     });
+  }
+
+  function updateNarrator(text) {
+    shell.querySelector('[data-copy="narrator"]').textContent = text || content.uiPlaceholders.narrator;
+  }
+
+  function updateCultureCards(cards = [], latestCard = null) {
+    const panel = shell.querySelector('#culture-panel');
+    const heading = panel.querySelector('[data-culture="heading"]');
+    const body = panel.querySelector('[data-culture="body"]');
+    body.innerHTML = '';
+
+    if (cards.length === 0) {
+      heading.textContent = content.uiPlaceholders.culture;
+      const placeholder = document.createElement('p');
+      placeholder.textContent = content.cultureCards[0]?.teaser ?? '通关后解锁文化线索。';
+      body.appendChild(placeholder);
+      return;
+    }
+
+    const activeCard = latestCard ?? cards[cards.length - 1];
+    heading.textContent = '已解锁文化线索';
+
+    const count = document.createElement('p');
+    count.className = 'culture-unlock-count';
+    count.textContent = `已解锁 ${cards.length} / ${content.cultureCards.length} 处`;
+
+    const card = document.createElement('article');
+    card.className = 'culture-card';
+
+    const title = document.createElement('strong');
+    title.textContent = activeCard.title;
+
+    const subtitle = document.createElement('span');
+    subtitle.className = 'culture-card__subtitle';
+    subtitle.textContent = activeCard.subtitle ?? activeCard.teaser;
+
+    const bodyCopy = document.createElement('p');
+    bodyCopy.textContent = activeCard.body ?? activeCard.teaser;
+
+    const hint = document.createElement('p');
+    hint.className = 'culture-card__hint';
+    hint.textContent = activeCard.visitTip ?? activeCard.heritageHint ?? activeCard.sourceNote;
+
+    const tags = document.createElement('div');
+    tags.className = 'culture-card__tags';
+    (activeCard.tags ?? []).forEach((tagText) => {
+      const tag = document.createElement('span');
+      tag.textContent = tagText;
+      tags.appendChild(tag);
+    });
+
+    card.append(title, subtitle, bodyCopy, hint, tags);
+
+    const list = document.createElement('ol');
+    list.className = 'culture-route-list';
+    cards.forEach((item) => {
+      const entry = document.createElement('li');
+      entry.textContent = item.title;
+      list.appendChild(entry);
+    });
+
+    body.append(count, card, list);
   }
 
   function showUpgradePanel(upgrades = [], onSelect = () => {}) {
@@ -401,6 +466,8 @@ export function renderShell(root, state, content) {
     archiveCloseButton: shell.querySelector('[data-action="archive-close"]'),
     updateHud,
     updateWeapon,
+    updateNarrator,
+    updateCultureCards,
     showUpgradePanel,
     hideUpgradePanel,
     setPauseState,

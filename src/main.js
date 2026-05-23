@@ -3,6 +3,14 @@ import './styles.css';
 import { createAppState } from './app/appState.js';
 import { demoContent } from './content/demoContent.js';
 import { mountGame } from './game/GameApp.js';
+import {
+  createCompletionComment,
+  createCompletionNarration,
+  createCultureUnlockNarration,
+  createOnboardingNarration,
+  createStageNarration,
+  createTravelTitle
+} from './narration/localNarrator.js';
 import { renderShell } from './ui/shell.js';
 
 const root = document.getElementById('app');
@@ -48,8 +56,9 @@ function removeLegacyVictoryPanel() {
 }
 
 const appState = createAppState({
-  narratorText: demoContent.uiPlaceholders.narrator,
+  narratorText: createOnboardingNarration(demoContent),
   route: demoContent.route,
+  cultureCards: demoContent.cultureCards,
   selectedWeapon: savedRun?.selectedWeapon ?? 'sword'
 });
 
@@ -59,7 +68,28 @@ const gameRoot = shell.root.querySelector('#game-root');
 
 const game = mountGame(gameRoot, {
   selectedWeapon: appState.getSnapshot().selectedWeapon,
-  emit: (eventName, payload) => appState.emit(eventName, payload)
+  emit: (eventName, payload) => {
+    if (eventName === 'game:completed') {
+      const unlockedCards = demoContent.cultureCards.filter((card) => (
+        (payload.stages ?? []).some((stage) => stage.id === card.spotId && stage.complete)
+      ));
+      const completion = {
+        title: createTravelTitle(payload, demoContent),
+        comment: createCompletionComment(payload, unlockedCards, demoContent),
+        summary: payload,
+        unlockedCards
+      };
+      appState.emit(eventName, {
+        summary: payload,
+        cultureCards: demoContent.cultureCards,
+        unlockedCards,
+        completion,
+        narratorText: createCompletionNarration(payload, unlockedCards, demoContent)
+      });
+      return;
+    }
+    appState.emit(eventName, payload);
+  }
 });
 
 let hasSavedRun = false;
@@ -70,9 +100,21 @@ if (savedRun && game.loadSnapshot(savedRun)) {
 }
 
 appState.emit('game:ready', game.getSnapshot());
+shell.updateNarrator(appState.getSnapshot().narratorText);
+
+function getUnlockedStageCards(gameSnapshot, appSnapshot) {
+  const unlockedIds = new Set(appSnapshot.unlockedCards.map((card) => card.spotId));
+  const completedIds = new Set(
+    (gameSnapshot.stageStatus ?? [])
+      .filter((stage) => stage.complete)
+      .map((stage) => stage.id)
+  );
+  return demoContent.cultureCards.filter((card) => completedIds.has(card.spotId) && !unlockedIds.has(card.spotId));
+}
 
 shell.startButton.addEventListener('click', () => {
   appState.emit('game:started', { selectedWeapon: appState.getSnapshot().selectedWeapon });
+  appState.emit('narrator:updated', { text: createOnboardingNarration(demoContent) });
   shell.setStartLabel('开始夜巡');
   hasSavedRun = false;
   game.start();
@@ -110,6 +152,24 @@ appState.subscribe((eventName, payload, snapshot) => {
     shell.updateHud(payload);
   }
 
+  if (eventName === 'game:stage-changed') {
+    const weapon = demoContent.weapons.find((item) => item.id === snapshot.selectedWeapon);
+    appState.emit('narrator:updated', { text: createStageNarration(payload.stage, { weapon }) });
+    getUnlockedStageCards(payload, snapshot).forEach((card) => {
+      appState.emit('culture:unlocked', { card });
+    });
+  }
+
+  if (eventName === 'culture:unlocked') {
+    const weapon = demoContent.weapons.find((item) => item.id === snapshot.selectedWeapon);
+    appState.emit('narrator:updated', { text: createCultureUnlockNarration(payload.card ?? payload, { weapon }) });
+    shell.updateCultureCards(snapshot.unlockedCards, payload.card ?? payload);
+  }
+
+  if (eventName === 'narrator:updated') {
+    shell.updateNarrator(snapshot.narratorText);
+  }
+
   if (eventName === 'weapon:selected') {
     shell.updateWeapon(snapshot.selectedWeapon);
     game.setWeapon(snapshot.selectedWeapon);
@@ -133,6 +193,8 @@ appState.subscribe((eventName, payload, snapshot) => {
     clearSavedRun();
     hasSavedRun = false;
     shell.setStartLabel('再战一次');
+    shell.updateNarrator(snapshot.narratorText);
+    shell.updateCultureCards(snapshot.unlockedCards, snapshot.unlockedCards.at(-1));
     removeLegacyVictoryPanel();
   }
 });

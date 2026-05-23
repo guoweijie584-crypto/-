@@ -10,6 +10,27 @@ const DEFAULT_STATE = {
   route: []
 };
 
+function mergeUnlockedCards(existing = [], incoming = []) {
+  const bySpot = new Map(existing.map((card) => [card.spotId, card]));
+  incoming.filter(Boolean).forEach((card) => {
+    if (!bySpot.has(card.spotId)) {
+      bySpot.set(card.spotId, card);
+    }
+  });
+  return [...bySpot.values()].sort((a, b) => (a.routeOrder ?? 0) - (b.routeOrder ?? 0));
+}
+
+function getCompletedStageIds(summary = {}) {
+  return (summary.stages ?? [])
+    .filter((stage) => stage.complete)
+    .map((stage) => stage.id);
+}
+
+function getCardsForCompletedStages(summary = {}, cultureCards = []) {
+  const completed = new Set(getCompletedStageIds(summary));
+  return cultureCards.filter((card) => completed.has(card.spotId));
+}
+
 export function createAppState(initial = {}) {
   let state = {
     ...DEFAULT_STATE,
@@ -56,7 +77,23 @@ export function createAppState(initial = {}) {
     }
 
     if (eventName === 'game:reset') {
-      state = { ...state, status: 'ready' };
+      state = {
+        ...state,
+        status: 'ready',
+        unlockedCards: [],
+        completion: null,
+        runSummary: null,
+        narratorText: initial.narratorText ?? ''
+      };
+    }
+
+    if (eventName === 'culture:unlocked') {
+      const card = payload.card ?? payload;
+      state = { ...state, unlockedCards: mergeUnlockedCards(state.unlockedCards, [card]) };
+    }
+
+    if (eventName === 'narrator:updated') {
+      state = { ...state, narratorText: payload.text ?? '' };
     }
 
     if (eventName === 'game:snapshot') {
@@ -64,7 +101,20 @@ export function createAppState(initial = {}) {
     }
 
     if (eventName === 'game:completed') {
-      state = { ...state, status: 'victory', completion: payload, runSummary: payload };
+      const rawSummary = payload.summary ?? payload.runSummary ?? payload;
+      const completedCards = getCardsForCompletedStages(rawSummary, payload.cultureCards ?? []);
+      const unlockedCards = mergeUnlockedCards(state.unlockedCards, [
+        ...completedCards,
+        ...(payload.unlockedCards ?? [])
+      ]);
+      state = {
+        ...state,
+        status: 'victory',
+        completion: payload.completion ?? payload,
+        runSummary: rawSummary,
+        unlockedCards,
+        narratorText: payload.narratorText ?? state.narratorText
+      };
     }
 
     notify(eventName, payload);

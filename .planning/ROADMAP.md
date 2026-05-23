@@ -2,7 +2,7 @@
 
 ## Overview
 
-The v1 roadmap turns the existing single-file Canvas action demo into a structured H5/PWA MVP. It first creates a Vite + Canvas app shell, then builds the three-stage action loop, then adds cultural cards and local AI-style narration, and finally hardens mobile/PWA/share readiness so the project can be shown as a scenic-area Jianghu副本入口.
+The v1 roadmap turns the existing single-file Canvas action demo into a structured H5/PWA MVP. It first creates a Vite + Canvas app shell, then builds the scenic-stage action loop, then adds cultural cards and local AI-style narration, and finally hardens mobile/PWA/share readiness so the project can be shown as a scenic-area Jianghu副本入口.
 
 ## Phases
 
@@ -12,7 +12,7 @@ The v1 roadmap turns the existing single-file Canvas action demo into a structur
 
 - [x] **Phase 1: App Skeleton And Demo Migration** - Create the Vite + Canvas H5 shell and preserve the existing playable combat loop.
 - [x] **Phase 2: Three-Stage Combat Loop** - Add weapon selection, scenic stages, enemies, boss, and a win state.
-- [ ] **Phase 3: Culture, Narration, And Route Reward** - Add culture cards, local AI fallback narration, completion card, and route recommendation.
+- [ ] **Phase 3: Culture, Narration, And Route Reward** - Add five-point culture cards, local AI fallback narration, completion card, and route recommendation.
 - [ ] **Phase 4: Mobile PWA And Demo Hardening** - Make the full loop phone-friendly, share-ready, and PWA-presentable.
 
 ## Phase Details
@@ -64,22 +64,22 @@ Plans:
 - [x] 02-03: Implement boss encounter, win condition, and run summary metrics.
 
 ### Phase 3: Culture, Narration, And Route Reward
-**Goal**: Deliver the文旅 loop: stage-clear culture cards, Jianghu narrator fallback, generated title/comment, final travel card, and route recommendation.
+**Goal**: Deliver the文旅 loop for the five-point route: stage-clear culture cards, Jianghu narrator fallback, generated title/comment, final travel card, and route recommendation.
 **Mode:** mvp
 **Depends on**: Phase 2
 **Requirements**: [CULT-01, CULT-02, CULT-03, CULT-04, NARR-01, NARR-02, NARR-03, ROUTE-01, ROUTE-02, ROUTE-03]
 **UI hint**: yes
 **Success Criteria** (what must be TRUE):
-  1. User unlocks one structured culture card after each stage clear.
+  1. User unlocks one structured culture card after each of the five stage clears.
   2. User sees Jianghu-style narrator text during onboarding, transitions, unlocks, and completion.
   3. User receives a performance-based title and completion comment from local fallback templates.
-  4. User receives a final 江湖游历卡 and the 老街 -> 古井 -> 城楼 route recommendation.
+  4. User receives a final 江湖游历卡 and the 老街 -> 古井 -> 石桥 -> 园林 -> 城楼 route recommendation.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: Add structured demo content data and culture-card unlock UI.
-- [ ] 03-02: Add local narrator/title/comment/route fallback generation.
-- [ ] 03-03: Add completion travel card and route recommendation flow.
+- [x] 03-01: Add five-point structured demo content data and culture-card unlock UI.
+- [x] 03-02: Add local narrator/title/comment/route fallback generation.
+- [ ] 03-03: Add completion travel card and five-point route recommendation flow.
 
 ### Phase 4: Mobile PWA And Demo Hardening
 **Goal**: Make the complete MVP usable and presentable on mobile as a scan-and-play H5/PWA demo.
@@ -107,7 +107,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. App Skeleton And Demo Migration | 3/3 | Completed | 2026-05-23 |
 | 2. Three-Stage Combat Loop | 3/3 | Completed | 2026-05-23 |
-| 3. Culture, Narration, And Route Reward | 0/3 | Not started | - |
+| 3. Culture, Narration, And Route Reward | 2/3 | In Progress | - |
 | 4. Mobile PWA And Demo Hardening | 0/2 | Not started | - |
 
 ## Coverage

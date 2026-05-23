@@ -75,6 +75,16 @@ describe('renderShell', () => {
     expect(root.querySelectorAll('.upgrade-choice')).toHaveLength(3);
   });
 
+  it('updates narrator copy safely', () => {
+    const root = document.createElement('div');
+    const state = createAppState();
+    const shell = renderShell(root, state, demoContent);
+
+    shell.updateNarrator('AI 说书人记下新的夜巡旁白');
+
+    expect(root.querySelector('[data-copy="narrator"]').textContent).toBe('AI 说书人记下新的夜巡旁白');
+  });
+
   it('does not render the old blocking victory popup', () => {
     const root = document.createElement('div');
     const state = createAppState();
