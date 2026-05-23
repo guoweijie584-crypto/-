@@ -15,11 +15,67 @@ export function render(ctx, canvas, state, input) {
   drawDroppedWeapons(ctx, state, droppedWeapons);
   drawProjectiles(ctx, projectiles);
   enemies.forEach((enemy) => drawEnemy(ctx, state, enemy));
+  drawBoss(ctx, state);
   drawPlayer(ctx, state, input);
   drawParticles(ctx, particles);
   drawDamageTexts(ctx, damageTexts);
 
   ctx.restore();
+}
+
+function drawBoss(ctx, state) {
+  if (!state.boss?.active) return;
+  const bossEnemy = state.enemies.find((enemy) => enemy.type === 'mist-armor-general');
+  if (!bossEnemy) return;
+
+  if (state.boss.telegraph) {
+    ctx.save();
+    ctx.translate(bossEnemy.x, bossEnemy.y);
+    ctx.rotate(state.boss.telegraph.angle ?? 0);
+    ctx.strokeStyle = '#C9493D';
+    ctx.fillStyle = 'rgba(201, 73, 61, 0.18)';
+    ctx.lineWidth = 4;
+    if (state.boss.telegraph.type === 'charge') {
+      ctx.fillRect(0, -18, state.boss.telegraph.range, 36);
+      ctx.strokeRect(0, -18, state.boss.telegraph.range, 36);
+    } else {
+      ctx.beginPath();
+      ctx.arc(0, 0, state.boss.telegraph.radius, -Math.PI * 0.55, Math.PI * 0.55);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  ctx.save();
+  ctx.translate(bossEnemy.x, bossEnemy.y);
+  if (state.boss.phase === 2) {
+    ctx.shadowBlur = 24;
+    ctx.shadowColor = '#54C6B2';
+    ctx.strokeStyle = '#54C6B2';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(0, 0, bossEnemy.radius + 12 + Math.sin(state.gameTime * 8) * 4, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.shadowBlur = 16;
+  ctx.shadowColor = '#C9493D';
+  ctx.fillStyle = '#25342C';
+  ctx.beginPath();
+  ctx.arc(0, 0, bossEnemy.radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#C9493D';
+  ctx.beginPath();
+  ctx.arc(18, -10, 5, 0, Math.PI * 2);
+  ctx.arc(18, 10, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  const barW = 220;
+  const hpRatio = Math.max(0, state.boss.hp / state.boss.maxHp);
+  ctx.fillStyle = 'rgba(16,22,19,0.86)';
+  ctx.fillRect(bossEnemy.x - barW / 2, bossEnemy.y - bossEnemy.radius - 34, barW, 12);
+  ctx.fillStyle = state.boss.phase === 2 ? '#54C6B2' : '#C9493D';
+  ctx.fillRect(bossEnemy.x - barW / 2, bossEnemy.y - bossEnemy.radius - 34, barW * hpRatio, 12);
 }
 
 function drawObjectives(ctx, state) {
@@ -234,6 +290,11 @@ export function drawEnemy(ctx, state, enemy) {
     ? Math.atan2(player.y - enemy.y, player.x - enemy.x)
     : enemy.targetAngle || 0;
   ctx.rotate(lookAngle);
+
+  if (enemy.type === 'mist-armor-general') {
+    ctx.restore();
+    return;
+  }
 
   if (enemy.type === 'lamp-shadow') {
     ctx.shadowBlur = 12;

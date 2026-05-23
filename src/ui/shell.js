@@ -59,6 +59,17 @@ export function renderShell(root, state, content) {
         <div class="weapon-list"></div>
       </aside>
 
+      <aside id="boss-panel" class="panel boss-panel is-hidden" data-panel="boss" aria-label="雾甲守将">
+        <div class="panel-title">
+          <i data-lucide="shield"></i>
+          <h2 data-hud="boss-title">雾甲守将</h2>
+        </div>
+        <div class="boss-meter">
+          <span data-hud="boss-phase">破甲前</span>
+          <strong data-hud="boss-hp">0 / 0</strong>
+        </div>
+      </aside>
+
       <aside id="upgrade-panel" class="panel upgrade-panel is-hidden" data-panel="upgrade" aria-label="选择功法">
         <div class="panel-title">
           <i data-lucide="sparkles"></i>
@@ -89,6 +100,16 @@ export function renderShell(root, state, content) {
           <h2>江湖游历卡待生成</h2>
         </div>
         <p>尚未破阵</p>
+      </aside>
+
+      <aside id="victory-panel" class="panel victory-panel is-hidden" data-panel="victory" aria-label="破阵成功">
+        <div class="panel-title">
+          <i data-lucide="shield"></i>
+          <h2>破阵成功</h2>
+        </div>
+        <div class="victory-stats"></div>
+        <h3>江湖游历卡待生成</h3>
+        <p>通关数据已记录，游历卡将在下一阶段生成。</p>
       </aside>
 
       <aside id="route-panel" class="panel compact-panel route-panel" aria-label="游览路线">
@@ -142,6 +163,7 @@ export function renderShell(root, state, content) {
       shell.querySelector('[data-hud="stage-title"]').textContent = snapshot.stage.title;
       shell.querySelector('[data-hud="objective"]').textContent = `${snapshot.stage.objective.label} ${snapshot.stage.objective.current} / ${snapshot.stage.objective.target}`;
     }
+    updateBoss(snapshot.boss);
   }
 
   function updateWeapon(weaponId) {
@@ -174,6 +196,45 @@ export function renderShell(root, state, content) {
     shell.querySelector('#upgrade-panel').classList.add('is-hidden');
   }
 
+  function updateBoss(boss) {
+    const panel = shell.querySelector('#boss-panel');
+    if (!boss?.active) {
+      panel.classList.add('is-hidden');
+      return;
+    }
+    panel.classList.remove('is-hidden');
+    shell.querySelector('[data-hud="boss-title"]').textContent = boss.title;
+    shell.querySelector('[data-hud="boss-phase"]').textContent = boss.phase === 2 ? '雾甲觉醒' : '破甲前';
+    shell.querySelector('[data-hud="boss-hp"]').textContent = `${boss.hp} / ${boss.maxHp}`;
+  }
+
+  function showVictory(summary) {
+    const panel = shell.querySelector('#victory-panel');
+    const stats = panel.querySelector('.victory-stats');
+    const stages = summary.stages?.filter((stage) => stage.complete).length ?? 0;
+    stats.innerHTML = '';
+    [
+      ['兵器', summary.selectedWeapon],
+      ['击杀', summary.kills],
+      ['用时', `${summary.completionTime}s`],
+      ['余血', summary.remainingHp],
+      ['阶段', `${stages} / ${summary.stages?.length ?? 3}`],
+      ['回声碎片', summary.echoFragments],
+      ['承伤', summary.damageTaken],
+      ['Boss 阶段', summary.bossPhaseReached]
+    ].forEach(([label, value]) => {
+      const row = document.createElement('div');
+      row.className = 'victory-row';
+      const key = document.createElement('span');
+      key.textContent = label;
+      const val = document.createElement('strong');
+      val.textContent = value;
+      row.append(key, val);
+      stats.appendChild(row);
+    });
+    panel.classList.remove('is-hidden');
+  }
+
   return {
     root: shell,
     startButton: shell.querySelector('[data-action="start"]'),
@@ -181,6 +242,7 @@ export function renderShell(root, state, content) {
     updateHud,
     updateWeapon,
     showUpgradePanel,
-    hideUpgradePanel
+    hideUpgradePanel,
+    showVictory
   };
 }

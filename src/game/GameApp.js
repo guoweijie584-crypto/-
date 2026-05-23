@@ -1,8 +1,10 @@
 import { distance, spawnParticles, spawnText } from './effects.js';
+import { createBoss, createBossEnemy, getBossSnapshot, isBossEnemy, syncBossFromEnemy, updateBoss } from './boss.js';
 import { createEnemy } from './enemies.js';
 import { MAP_SIZE, createEchoFragments, createInitialGameState, createTalismans } from './gameState.js';
 import { createInputController } from './input.js';
 import { render } from './rendering.js';
+import { createRunSummary } from './runSummary.js';
 import { STAGES, createStageProgress, getStageDefinition, getStageSnapshot } from './stages.js';
 import { getWeaponDefinition, getWeaponUpgrades } from './weapons.js';
 
@@ -68,6 +70,8 @@ export function mountGame(container, options = {}) {
       objectives: {
         ...state.objectives.progress
       },
+      boss: getBossSnapshot(state.boss),
+      runSummary: state.runSummary,
       kills: state.kills,
       gameTime: state.gameTime
     };
@@ -240,6 +244,11 @@ export function mountGame(container, options = {}) {
     spawnParticles(state, enemy.x, enemy.y, vfxColor, 6, 4);
 
     if (enemy.hp <= 0) {
+      if (isBossEnemy(enemy)) {
+        defeatBoss(enemy);
+        return;
+      }
+
       state.kills += 1;
       player.exp += enemy.expValue;
       player.energy = Math.min(player.maxEnergy, player.energy + 6 * player.energyGainMult);
@@ -305,7 +314,7 @@ export function mountGame(container, options = {}) {
   }
 
   function update() {
-    if (state.gameState !== 'playing') return;
+    if (state.gameState !== 'playing' && state.gameState !== 'boss') return;
 
     const { player, camera } = state;
     const { keys, mouse } = input;
@@ -339,11 +348,17 @@ export function mountGame(container, options = {}) {
       if (player.swingTimer <= 0) player.isSwingAnimating = false;
     }
 
-    state.spawnTimer += 1;
-    const maxInterval = Math.max(15, 80 - Math.floor(state.gameTime / 5));
-    if (state.spawnTimer >= maxInterval) {
-      state.spawnTimer = 0;
-      spawnEnemy();
+    if (state.gameState === 'playing') {
+      state.spawnTimer += 1;
+      const maxInterval = Math.max(15, 80 - Math.floor(state.gameTime / 5));
+      if (state.spawnTimer >= maxInterval) {
+        state.spawnTimer = 0;
+        spawnEnemy();
+      }
+    }
+
+    if (state.gameState === 'boss') {
+      updateBossEncounter();
     }
 
     updateDroppedWeapons();
@@ -402,6 +417,7 @@ export function mountGame(container, options = {}) {
   }
 
   function updateObjectiveProgress() {
+    if (state.gameState !== 'playing') return;
     const progress = state.objectives.progress;
     if (state.currentStageId === 'old-street') {
       progress.current = state.objectives.lamps.filter((lamp) => lamp.lit).length;
@@ -430,7 +446,7 @@ export function mountGame(container, options = {}) {
 
     if (state.currentStageIndex >= STAGES.length - 1) {
       state.objectives.progress.complete = true;
-      state.gameState = 'pre-boss';
+      startBoss();
       emit('game:stage-changed', getSnapshot());
       updateUI();
       return;
@@ -449,6 +465,57 @@ export function mountGame(container, options = {}) {
     }
     spawnText(state, state.player.x, state.player.y - 70, getStageDefinition(state.currentStageId).title, '#D7A84B', 22);
     emit('game:stage-changed', getSnapshot());
+    updateUI();
+  }
+
+  function startBoss() {
+    state.gameState = 'boss';
+    state.boss = createBoss({ x: state.player.x, y: state.player.y - 280 });
+    const bossEnemy = createBossEnemy(state.boss, { x: state.player.x, y: state.player.y - 280 });
+    state.boss.enemyRef = bossEnemy;
+    state.enemies = [bossEnemy];
+    state.objectives.echoWaves = [];
+    state.spawnTimer = 0;
+    state.runStats.bossPhaseReached = 1;
+    spawnText(state, bossEnemy.x, bossEnemy.y - 80, '雾甲守将', '#C9493D', 24);
+    emit('game:boss-started', getSnapshot());
+  }
+
+  function updateBossEncounter() {
+    const bossEnemy = state.enemies.find((enemy) => isBossEnemy(enemy));
+    if (!state.boss || !bossEnemy) return;
+    updateBoss(state.boss, bossEnemy, state, {
+      hurtPlayer,
+      spawnText: (x, y, text, color, size) => spawnText(state, x, y, text, color, size),
+      spawnParticles: (x, y, color, count, speed) => spawnParticles(state, x, y, color, count, speed),
+      summonPaperDolls: (x, y) => {
+        for (let i = 0; i < 2; i += 1) {
+          const angle = Math.PI * i + Math.random() * 0.5;
+          state.enemies.push(createEnemy('paper-doll', {
+            x: x + Math.cos(angle) * 110,
+            y: y + Math.sin(angle) * 110
+          }, state.gameTime));
+        }
+      }
+    });
+    syncBossFromEnemy(state.boss, bossEnemy);
+    if (state.boss.hp <= 0) {
+      defeatBoss(bossEnemy);
+    }
+  }
+
+  function defeatBoss(enemy) {
+    state.enemies = state.enemies.filter((item) => item !== enemy);
+    if (state.boss) {
+      state.boss.active = false;
+      state.boss.defeated = true;
+      state.boss.hp = 0;
+      state.runStats.bossPhaseReached = Math.max(state.runStats.bossPhaseReached, state.boss.phase);
+    }
+    state.gameState = 'victory';
+    state.runSummary = createRunSummary(state);
+    spawnParticles(state, state.player.x, state.player.y, '#D7A84B', 36, 10, 0.03);
+    emit('game:completed', state.runSummary);
     updateUI();
   }
 

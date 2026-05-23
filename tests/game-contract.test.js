@@ -58,6 +58,13 @@ describe('mountGame', () => {
     expect(snapshot).toHaveProperty('selectedWeapon', 'sword');
     expect(snapshot).toHaveProperty('weapon');
     expect(snapshot).toHaveProperty('stage');
+    expect(snapshot).toHaveProperty('boss');
+    expect(snapshot.boss).toMatchObject({
+      active: false,
+      phase: 0,
+      title: '雾甲守将'
+    });
+    expect(snapshot).toHaveProperty('runSummary', null);
     expect(snapshot.stage).toMatchObject({
       id: 'old-street',
       title: '老街灯影阵',

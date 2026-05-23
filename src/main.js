@@ -55,6 +55,10 @@ appState.subscribe((eventName, payload, snapshot) => {
   if (eventName === 'game:upgrade-selected') {
     shell.hideUpgradePanel();
   }
+
+  if (eventName === 'game:completed') {
+    shell.showVictory(payload);
+  }
 });
 
 shell.updateHud(game.getSnapshot());

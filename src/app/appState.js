@@ -6,6 +6,7 @@ const DEFAULT_STATE = {
   narratorText: '',
   unlockedCards: [],
   completion: null,
+  runSummary: null,
   route: []
 };
 
@@ -60,6 +61,10 @@ export function createAppState(initial = {}) {
 
     if (eventName === 'game:snapshot') {
       state = { ...state, status: payload.status ?? state.status };
+    }
+
+    if (eventName === 'game:completed') {
+      state = { ...state, status: 'victory', completion: payload, runSummary: payload };
     }
 
     notify(eventName, payload);

@@ -36,6 +36,8 @@ export function createInitialGameState(initial = {}) {
     camera: { x: 0, y: 0 },
     terrain: { decorations: createTerrain() },
     player: createPlayer(),
+    boss: null,
+    runSummary: null,
     pendingUpgrades: [],
     runStats: {
       selectedWeapon,

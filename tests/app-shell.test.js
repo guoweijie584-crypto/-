@@ -11,7 +11,7 @@ describe('renderShell', () => {
 
     renderShell(root, state, demoContent);
 
-    ['game-root', 'weapon-panel', 'narrator-panel', 'culture-panel', 'completion-panel', 'route-panel'].forEach((id) => {
+    ['game-root', 'weapon-panel', 'boss-panel', 'narrator-panel', 'culture-panel', 'completion-panel', 'route-panel', 'victory-panel'].forEach((id) => {
       expect(root.querySelector(`#${id}`)).toBeTruthy();
     });
 
@@ -25,7 +25,11 @@ describe('renderShell', () => {
     expect(root.textContent).toContain('AI 说书人');
     expect(root.textContent).toContain('文化线索待解锁');
     expect(root.textContent).toContain('江湖游历卡待生成');
+    expect(root.textContent).toContain('破阵成功');
+    expect(root.textContent).toContain('通关数据已记录，游历卡将在下一阶段生成。');
     expect(root.textContent).toContain('游览路线待推荐');
+    expect(root.textContent).not.toContain('夜灯破雾侠');
+    expect(root.textContent).not.toContain('老街 -> 古井 -> 城楼');
   });
 
   it('updates selected weapon through state events', () => {
@@ -53,5 +57,31 @@ describe('renderShell', () => {
     expect(root.querySelector('#upgrade-panel').classList.contains('is-hidden')).toBe(false);
     expect(root.textContent).toContain('流云剑步');
     expect(root.querySelectorAll('.upgrade-choice')).toHaveLength(3);
+  });
+
+  it('shows victory stats from completion summary', () => {
+    const root = document.createElement('div');
+    const state = createAppState();
+    const shell = renderShell(root, state, demoContent);
+
+    shell.showVictory({
+      selectedWeapon: 'blade',
+      kills: 18,
+      completionTime: 201.5,
+      remainingHp: 72,
+      stages: [
+        { id: 'old-street', complete: true },
+        { id: 'ancient-well', complete: true },
+        { id: 'city-tower', complete: true }
+      ],
+      echoFragments: 5,
+      damageTaken: 28,
+      bossPhaseReached: 2
+    });
+
+    expect(root.querySelector('#victory-panel').classList.contains('is-hidden')).toBe(false);
+    expect(root.textContent).toContain('破阵成功');
+    expect(root.textContent).toContain('blade');
+    expect(root.textContent).toContain('201.5s');
   });
 });
