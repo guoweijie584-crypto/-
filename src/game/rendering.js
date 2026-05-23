@@ -243,8 +243,130 @@ function drawTalisman(ctx, talisman) {
 
 function drawWorld(ctx, canvas, camera, terrain) {
   const cityMap = terrain.cityMap;
-  if (!cityMap) return;
+  if (!cityMap) {
+    drawFallbackWorld(ctx, canvas, camera, terrain);
+    return;
+  }
+
+  drawWorldGround(ctx, canvas, camera, cityMap);
+  drawCityBounds(ctx, cityMap);
+  drawScenicRoutes(ctx, cityMap.landmarks);
+  drawCanals(ctx, cityMap.canals);
+  drawRoads(ctx, cityMap.roads);
+  drawBridges(ctx, cityMap.bridges);
+  drawBuildings(ctx, cityMap.buildings);
+  drawCityDecorations(ctx, cityMap.decorations);
+  drawTerrainDecorations(ctx, canvas, camera, terrain.decorations);
   drawLandmarkLabels(ctx, cityMap.landmarks);
+}
+
+function drawWorldGround(ctx, canvas, camera, cityMap) {
+  const viewBuffer = 160;
+  const viewX = camera.x - viewBuffer;
+  const viewY = camera.y - viewBuffer;
+  const viewWidth = canvas.width + viewBuffer * 2;
+  const viewHeight = canvas.height + viewBuffer * 2;
+
+  const ground = createLinearGradient(ctx, viewX, viewY, viewX, viewY + viewHeight, '#171d19');
+  ground.addColorStop(0, '#20251f');
+  ground.addColorStop(0.46, '#18231d');
+  ground.addColorStop(1, '#111713');
+  ctx.fillStyle = ground;
+  ctx.fillRect(viewX, viewY, viewWidth, viewHeight);
+
+  drawMovingStoneTexture(ctx, viewX, viewY, viewWidth, viewHeight);
+  drawWorldMist(ctx, viewX, viewY, viewWidth, viewHeight);
+
+  if (cityMap.cityBounds) {
+    const bounds = cityMap.cityBounds;
+    ctx.fillStyle = 'rgba(7, 10, 9, 0.42)';
+    ctx.fillRect(viewX, viewY, viewWidth, Math.max(0, bounds.y - viewY));
+    ctx.fillRect(viewX, bounds.y + bounds.height, viewWidth, Math.max(0, viewY + viewHeight - bounds.y - bounds.height));
+    ctx.fillRect(viewX, viewY, Math.max(0, bounds.x - viewX), viewHeight);
+    ctx.fillRect(bounds.x + bounds.width, viewY, Math.max(0, viewX + viewWidth - bounds.x - bounds.width), viewHeight);
+  }
+}
+
+function drawMovingStoneTexture(ctx, viewX, viewY, viewWidth, viewHeight) {
+  const tile = 96;
+  const startX = Math.floor(viewX / tile) * tile;
+  const startY = Math.floor(viewY / tile) * tile;
+  const endX = viewX + viewWidth;
+  const endY = viewY + viewHeight;
+
+  ctx.strokeStyle = 'rgba(244, 239, 224, 0.055)';
+  ctx.lineWidth = 1;
+  for (let x = startX; x <= endX; x += tile) {
+    ctx.beginPath();
+    ctx.moveTo(x, viewY);
+    ctx.lineTo(x + Math.sin(x * 0.003) * 24, endY);
+    ctx.stroke();
+  }
+  for (let y = startY; y <= endY; y += tile) {
+    ctx.beginPath();
+    ctx.moveTo(viewX, y);
+    ctx.lineTo(endX, y + Math.cos(y * 0.003) * 18);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = 'rgba(215, 168, 75, 0.1)';
+  for (let x = startX; x <= endX; x += tile) {
+    for (let y = startY; y <= endY; y += tile) {
+      const seed = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+      const rand = seed - Math.floor(seed);
+      if (rand > 0.76) {
+        ctx.fillRect(x + 18 + rand * 28, y + 18 + (1 - rand) * 34, 3, 3);
+      }
+    }
+  }
+}
+
+function drawWorldMist(ctx, viewX, viewY, viewWidth, viewHeight) {
+  ctx.strokeStyle = 'rgba(180, 200, 220, 0.09)';
+  ctx.lineWidth = 28;
+  for (let i = 0; i < 5; i += 1) {
+    const y = viewY + ((i + 1) * viewHeight) / 6;
+    ctx.beginPath();
+    ctx.moveTo(viewX, y + Math.sin((viewX + i * 190) * 0.002) * 24);
+    ctx.lineTo(viewX + viewWidth, y + Math.cos((viewX + i * 130) * 0.002) * 24);
+    ctx.stroke();
+  }
+}
+
+function drawScenicRoutes(ctx, landmarks) {
+  const routeIds = landmarks.route ?? ['old-street', 'ancient-well', 'city-tower'];
+  const route = routeIds.map((id) => landmarks[id]).filter(Boolean);
+  if (route.length < 2) return;
+
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = 'rgba(16, 22, 19, 0.65)';
+  ctx.lineWidth = 64;
+  strokeRoute(ctx, route);
+
+  ctx.strokeStyle = 'rgba(215, 168, 75, 0.32)';
+  ctx.lineWidth = 40;
+  strokeRoute(ctx, route);
+
+  ctx.strokeStyle = 'rgba(244, 239, 224, 0.14)';
+  ctx.lineWidth = 2;
+  strokeRoute(ctx, route);
+  ctx.restore();
+}
+
+function strokeRoute(ctx, route) {
+  ctx.beginPath();
+  ctx.moveTo(route[0].x, route[0].y);
+  for (let i = 1; i < route.length; i += 1) {
+    const previous = route[i - 1];
+    const point = route[i];
+    const midX = (previous.x + point.x) / 2;
+    const midY = (previous.y + point.y) / 2;
+    drawCurve(ctx, midX, previous.y, midX, midY);
+    drawCurve(ctx, midX, point.y, point.x, point.y);
+  }
+  ctx.stroke();
 }
 
 function drawAncientCityWallpaper(ctx, canvas) {
@@ -578,8 +700,10 @@ function drawCityDecorations(ctx, decorations) {
 }
 
 function drawLandmarkLabels(ctx, landmarks) {
-  ['old-street', 'ancient-well', 'city-tower'].forEach((id) => {
+  const routeIds = landmarks.route ?? ['old-street', 'ancient-well', 'city-tower'];
+  routeIds.forEach((id) => {
     const landmark = landmarks[id];
+    if (!landmark) return;
     ctx.fillStyle = 'rgba(16, 22, 19, 0.78)';
     ctx.fillRect(landmark.x - 72, landmark.y - 58, 144, 28);
     ctx.strokeStyle = 'rgba(215, 168, 75, 0.6)';

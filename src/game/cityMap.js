@@ -7,20 +7,37 @@ export const SUZHOU_CITY_MAP = {
   landmarks: {
     'old-street': { id: 'old-street', title: '平江路老街', x: 835, y: -1110 },
     'ancient-well': { id: 'ancient-well', title: '古井广场', x: 145, y: 60 },
+    'stone-bridge': { id: 'stone-bridge', title: '水巷石桥', x: 880, y: 620 },
+    'garden-maze': { id: 'garden-maze', title: '园林曲径', x: -260, y: 1180 },
     'city-tower': { id: 'city-tower', title: '盘门水陆城门', x: -1160, y: 850 },
+    route: ['old-street', 'ancient-well', 'stone-bridge', 'garden-maze', 'city-tower'],
     'old-street-lamps': [
       { id: 'lamp-1', x: 820, y: -1320 },
       { id: 'lamp-2', x: 850, y: -1030 },
       { id: 'lamp-3', x: 805, y: -720 }
     ],
-    'echo-fragments': [
+    'well-echo-fragments': [
       { id: 'echo-1', x: 110, y: -250 },
       { id: 'echo-2', x: 290, y: -50 },
       { id: 'echo-3', x: 130, y: 160 },
       { id: 'echo-4', x: -80, y: 80 },
       { id: 'echo-5', x: 305, y: 265 }
     ],
-    talismans: [
+    'bridge-lanterns': [
+      { id: 'bridge-lamp-1', x: 720, y: 420 },
+      { id: 'bridge-lamp-2', x: 930, y: 470 },
+      { id: 'bridge-lamp-3', x: 1040, y: 720 },
+      { id: 'bridge-lamp-4', x: 790, y: 825 }
+    ],
+    'garden-echo-fragments': [
+      { id: 'garden-echo-1', x: -470, y: 990 },
+      { id: 'garden-echo-2', x: -210, y: 935 },
+      { id: 'garden-echo-3', x: -20, y: 1110 },
+      { id: 'garden-echo-4', x: -350, y: 1255 },
+      { id: 'garden-echo-5', x: -120, y: 1390 },
+      { id: 'garden-echo-6', x: -560, y: 1320 }
+    ],
+    'tower-talismans': [
       { id: 'talisman-1', x: -1380, y: 840 },
       { id: 'talisman-2', x: -1095, y: 640 },
       { id: 'talisman-3', x: -850, y: 820 }
@@ -32,6 +49,10 @@ export const SUZHOU_CITY_MAP = {
       { x: 125, y: -430 },
       { x: 315, y: 180 },
       { x: -160, y: 80 },
+      { x: 720, y: 430 },
+      { x: 1040, y: 740 },
+      { x: -460, y: 980 },
+      { x: -120, y: 1380 },
       { x: -980, y: 545 },
       { x: -1450, y: 820 },
       { x: -900, y: 620 }
@@ -46,8 +67,9 @@ export function getLandmarkPosition(id) {
 
 export function getStageObjectivePoints(type) {
   if (type === 'lamps') return SUZHOU_CITY_MAP.landmarks['old-street-lamps'];
-  if (type === 'echo-fragments') return SUZHOU_CITY_MAP.landmarks['echo-fragments'];
-  if (type === 'talismans') return SUZHOU_CITY_MAP.landmarks.talismans;
+  if (type === 'echo-fragments') return SUZHOU_CITY_MAP.landmarks['well-echo-fragments'];
+  if (type === 'talismans') return SUZHOU_CITY_MAP.landmarks['tower-talismans'];
+  if (Array.isArray(SUZHOU_CITY_MAP.landmarks[type])) return SUZHOU_CITY_MAP.landmarks[type];
   return [];
 }
 

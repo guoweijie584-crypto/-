@@ -62,17 +62,35 @@ export const demoContent = {
       teaser: '井沿回声不散，像在复述一座城的水脉记忆。'
     },
     {
+      spotId: 'stone-bridge',
+      title: '石桥渡影阵',
+      sourceNote: '演示资料：后续替换为真实水巷石桥、桥梁营造与舟行民俗资料。',
+      unlockStage: 3,
+      routeOrder: 3,
+      teaser: '桥灯沿水巷次第亮起，像把夜巡火种送过雾中的河面。'
+    },
+    {
+      spotId: 'garden-maze',
+      title: '园林迷踪阵',
+      sourceNote: '演示资料：后续替换为真实园林空间、游线与造景资料。',
+      unlockStage: 4,
+      routeOrder: 4,
+      teaser: '曲径、漏窗与树影交叠，藏着通往城楼前的最后暗门。'
+    },
+    {
       spotId: 'city-tower',
       title: '城楼镇妖阵',
       sourceNote: '演示资料：后续替换为真实城楼营造、城防和登临路线资料。',
-      unlockStage: 3,
-      routeOrder: 3,
+      unlockStage: 5,
+      routeOrder: 5,
       teaser: '登城望远，雾甲守将把最后一段路线压在城楼风口。'
     }
   ],
   route: [
     { spotId: 'old-street', title: '老街', routeOrder: 1 },
     { spotId: 'ancient-well', title: '古井', routeOrder: 2 },
-    { spotId: 'city-tower', title: '城楼', routeOrder: 3 }
+    { spotId: 'stone-bridge', title: '石桥', routeOrder: 3 },
+    { spotId: 'garden-maze', title: '园林', routeOrder: 4 },
+    { spotId: 'city-tower', title: '城楼', routeOrder: 5 }
   ]
 };

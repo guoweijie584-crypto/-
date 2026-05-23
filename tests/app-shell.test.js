@@ -11,9 +11,10 @@ describe('renderShell', () => {
 
     renderShell(root, state, demoContent);
 
-    ['game-root', 'weapon-panel', 'boss-panel', 'narrator-panel', 'culture-panel', 'completion-panel', 'route-panel', 'victory-panel'].forEach((id) => {
+    ['game-root', 'weapon-panel', 'boss-panel', 'narrator-panel', 'culture-panel', 'completion-panel', 'route-panel'].forEach((id) => {
       expect(root.querySelector(`#${id}`)).toBeTruthy();
     });
+    expect(root.querySelector('#victory-panel')).toBeNull();
 
     expect(root.textContent).toContain('山河破阵录：古城夜巡');
     expect(root.textContent).toContain('开始夜巡');
@@ -29,8 +30,6 @@ describe('renderShell', () => {
     expect(root.textContent).toContain('AI 说书人');
     expect(root.textContent).toContain('文化线索待解锁');
     expect(root.textContent).toContain('江湖游历卡待生成');
-    expect(root.textContent).toContain('破阵成功');
-    expect(root.textContent).toContain('通关数据已记录，游历卡将在下一阶段生成。');
     expect(root.textContent).toContain('游览路线待推荐');
     expect(root.textContent).not.toContain('夜灯破雾侠');
     expect(root.textContent).not.toContain('老街 -> 古井 -> 城楼');
@@ -76,29 +75,13 @@ describe('renderShell', () => {
     expect(root.querySelectorAll('.upgrade-choice')).toHaveLength(3);
   });
 
-  it('shows victory stats from completion summary', () => {
+  it('does not render the old blocking victory popup', () => {
     const root = document.createElement('div');
     const state = createAppState();
     const shell = renderShell(root, state, demoContent);
 
-    shell.showVictory({
-      selectedWeapon: 'blade',
-      kills: 18,
-      completionTime: 201.5,
-      remainingHp: 72,
-      stages: [
-        { id: 'old-street', complete: true },
-        { id: 'ancient-well', complete: true },
-        { id: 'city-tower', complete: true }
-      ],
-      echoFragments: 5,
-      damageTaken: 28,
-      bossPhaseReached: 2
-    });
-
-    expect(root.querySelector('#victory-panel').classList.contains('is-hidden')).toBe(false);
-    expect(root.textContent).toContain('破阵成功');
-    expect(root.textContent).toContain('blade');
-    expect(root.textContent).toContain('201.5s');
+    expect(shell.showVictory).toBeUndefined();
+    expect(root.querySelector('#victory-panel')).toBeNull();
+    expect(root.textContent).not.toContain('破阵成功');
   });
 });

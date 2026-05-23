@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-05-23T19:46:00+08:00"
-last_activity: "2026-05-23 — Quick task complete: added 双月匕, 月轮刃, and 符箓折扇 to the weapon selection panel."
+last_updated: "2026-05-23T21:47:00+08:00"
+last_activity: "2026-05-23 — Quick task complete: expanded to five stages with ultimate tasks."
 progress:
   total_phases: 4
   completed_phases: 2
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-05-23)
 Phase: 3 of 4 (Culture, Narration, And Route Reward)
 Plan: 0 of 3 in current phase
 Status: Ready to plan
-Last activity: 2026-05-23 — Quick task complete: added 双月匕, 月轮刃, and 符箓折扇 to the weapon selection panel.
+Last activity: 2026-05-23 — Quick task complete: expanded to five stages with ultimate tasks.
 
 Progress: [█████░░░░░] 50%
 
@@ -81,6 +81,9 @@ Recent decisions affecting current work:
 
 | Date | Task | Summary |
 |------|------|---------|
+| 2026-05-23 | More stages with ultimate tasks | Expanded the route to five stages and added an explicit ultimate task to every stage objective shown in the HUD. |
+| 2026-05-23 | Remove victory popup | Removed the blocking "破阵成功" popup after completion; the run can finish without showing a close-less modal. |
+| 2026-05-23 | Moving world background | Added a camera-relative city ground layer with stone texture, mist, scenic route paths, map features, decorations, and landmark labels so movement visibly changes the background. |
 | 2026-05-23 | Selectable extra weapons | Added 双月匕, 月轮刃, and 符箓折扇 to the weapon panel as real selectable weapons with gameplay definitions and upgrades. |
 | 2026-05-23 | Six distinct weapon styles | Replaced duplicated orbit visuals with six styles: sword, blade, spear, daggers, ring blade, and talisman fan. |
 | 2026-05-23 | Six orbiting weapons | Reused the existing sword, blade, and spear skins twice to render six evenly spaced orbiting weapons around the player. |

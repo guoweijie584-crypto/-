@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { mountGame } from '../src/game/GameApp.js';
+import { createEchoFragments } from '../src/game/gameState.js';
+import { createStageProgress } from '../src/game/stages.js';
 
 const context = {
   fillRect: vi.fn(),
@@ -42,6 +44,8 @@ globalThis.cancelAnimationFrame = vi.fn((id) => clearTimeout(id));
 afterEach(() => {
   vi.clearAllMocks();
   document.body.innerHTML = '';
+  globalThis.requestAnimationFrame = vi.fn((callback) => setTimeout(callback, 16));
+  globalThis.cancelAnimationFrame = vi.fn((id) => clearTimeout(id));
 });
 
 describe('mountGame', () => {
@@ -75,7 +79,8 @@ describe('mountGame', () => {
     expect(snapshot.stage).toMatchObject({
       id: 'old-street',
       title: '老街灯影阵',
-      objective: { type: 'lamps', current: 0, target: 3 }
+      total: 5,
+      objective: { type: 'lamps', current: 0, target: 3, ultimateTask: '终极任务：点亮老街三盏夜巡灯，破开第一重灯影妖雾' }
     });
     expect(snapshot.objectives).toMatchObject({ type: 'lamps', current: 0, target: 3 });
     expect(snapshot.weapon.attack.style).toBe('sword-wave');
@@ -116,6 +121,37 @@ describe('mountGame', () => {
     game.start();
 
     expect(sound.play).toHaveBeenCalledWith('attack');
+    game.stop();
+  });
+
+  it('advances into repeated objective types without freezing the loop', () => {
+    globalThis.requestAnimationFrame = vi.fn(() => 1);
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const game = mountGame(container);
+    const { state } = game._debug;
+    const fragments = createEchoFragments('well-echo-fragments');
+
+    Object.assign(state, {
+      currentStageIndex: 1,
+      currentStageId: 'ancient-well'
+    });
+    state.objectives.progress = createStageProgress('ancient-well');
+    state.objectives.progress.current = fragments.length - 1;
+    state.objectives.echoFragments = fragments.map((fragment, index) => ({
+      ...fragment,
+      collected: index < fragments.length - 1
+    }));
+    const finalFragment = state.objectives.echoFragments.at(-1);
+    state.player.x = finalFragment.x;
+    state.player.y = finalFragment.y;
+
+    expect(() => game.start()).not.toThrow();
+    expect(game.getSnapshot().stage).toMatchObject({
+      id: 'stone-bridge',
+      objective: { type: 'lamps', target: 4 }
+    });
+    expect(state.objectives.lamps).toHaveLength(4);
     game.stop();
   });
 });

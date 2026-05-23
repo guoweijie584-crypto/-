@@ -1,12 +1,18 @@
 import {
+  Archive,
   BadgeInfo,
   CircleDot,
   Gauge,
   MapPinned,
+  Pause,
+  Play,
+  Save,
   ScrollText,
   Shield,
   Sparkles,
   Swords,
+  Trash2,
+  X,
   createIcons
 } from 'lucide';
 
@@ -24,11 +30,47 @@ export function renderShell(root, state, content) {
           <p class="eyebrow">古城夜巡</p>
           <h1>${content.title}</h1>
         </div>
-        <button class="primary-action" type="button" data-action="start">
-          <i data-lucide="sparkles"></i>
-          <span>开始夜巡</span>
-        </button>
+        <div class="topbar-actions">
+          <button class="ghost-action" type="button" data-action="pause" aria-pressed="false">
+            <i data-lucide="pause"></i>
+            <span data-copy="pause-label">暂停</span>
+          </button>
+          <button class="ghost-action" type="button" data-action="save">
+            <i data-lucide="save"></i>
+            <span data-copy="save-label">存档</span>
+          </button>
+          <button class="ghost-action" type="button" data-action="archive">
+            <i data-lucide="archive"></i>
+            <span>档案</span>
+          </button>
+          <button class="primary-action" type="button" data-action="start">
+            <i data-lucide="sparkles"></i>
+            <span data-copy="start-label">开始夜巡</span>
+          </button>
+        </div>
       </header>
+
+      <div id="pause-overlay" class="pause-overlay is-hidden" aria-live="polite">
+        <div class="pause-card">
+          <i data-lucide="pause"></i>
+          <h2>已暂停</h2>
+          <p>江湖暂歇，再点暂停继续巡夜。</p>
+        </div>
+      </div>
+
+      <aside id="archive-panel" class="panel archive-panel is-hidden" aria-label="存档列表">
+        <header class="archive-header">
+          <div class="panel-title">
+            <i data-lucide="archive"></i>
+            <h2>存档列表</h2>
+          </div>
+          <button class="icon-action archive-close" type="button" data-action="archive-close" aria-label="关闭">
+            <i data-lucide="x"></i>
+          </button>
+        </header>
+        <p class="archive-empty" data-copy="archive-empty">还没有任何存档，点击"存档"按钮记录当前进度。</p>
+        <ul class="archive-list" data-list="archive"></ul>
+      </aside>
 
       <aside class="combat-hud" aria-label="战斗状态">
         <div id="stage-panel" class="stage-panel" data-panel="stage">
@@ -104,16 +146,6 @@ export function renderShell(root, state, content) {
         <p>尚未破阵</p>
       </aside>
 
-      <aside id="victory-panel" class="panel victory-panel is-hidden" data-panel="victory" aria-label="破阵成功">
-        <div class="panel-title">
-          <i data-lucide="shield"></i>
-          <h2>破阵成功</h2>
-        </div>
-        <div class="victory-stats"></div>
-        <h3>江湖游历卡待生成</h3>
-        <p>通关数据已记录，游历卡将在下一阶段生成。</p>
-      </aside>
-
       <aside id="route-panel" class="panel compact-panel route-panel" aria-label="游览路线">
         <div class="panel-title">
           <i data-lucide="map-pinned"></i>
@@ -145,12 +177,18 @@ export function renderShell(root, state, content) {
 
   createIcons({
     icons: {
+      Archive,
       BadgeInfo,
       MapPinned,
+      Pause,
+      Play,
+      Save,
       ScrollText,
       Shield,
       Sparkles,
-      Swords
+      Swords,
+      Trash2,
+      X
     }
   });
 
@@ -163,7 +201,9 @@ export function renderShell(root, state, content) {
     shell.querySelector('[data-hud="kills"]').textContent = snapshot.kills;
     if (snapshot.stage?.objective) {
       shell.querySelector('[data-hud="stage-title"]').textContent = snapshot.stage.title;
-      shell.querySelector('[data-hud="objective"]').textContent = `${snapshot.stage.objective.label} ${snapshot.stage.objective.current} / ${snapshot.stage.objective.target}`;
+      const objective = snapshot.stage.objective;
+      const ultimateTask = objective.ultimateTask ? `｜${objective.ultimateTask}` : '';
+      shell.querySelector('[data-hud="objective"]').textContent = `${objective.label} ${objective.current} / ${objective.target} ${ultimateTask}`;
     }
     updateBoss(snapshot.boss);
   }
@@ -253,41 +293,122 @@ export function renderShell(root, state, content) {
     shell.querySelector('[data-hud="boss-hp"]').textContent = `${boss.hp} / ${boss.maxHp}`;
   }
 
-  function showVictory(summary) {
-    const panel = shell.querySelector('#victory-panel');
-    const stats = panel.querySelector('.victory-stats');
-    const stages = summary.stages?.filter((stage) => stage.complete).length ?? 0;
-    stats.innerHTML = '';
-    [
-      ['兵器', summary.selectedWeapon],
-      ['击杀', summary.kills],
-      ['用时', `${summary.completionTime}s`],
-      ['余血', summary.remainingHp],
-      ['阶段', `${stages} / ${summary.stages?.length ?? 3}`],
-      ['回声碎片', summary.echoFragments],
-      ['承伤', summary.damageTaken],
-      ['Boss 阶段', summary.bossPhaseReached]
-    ].forEach(([label, value]) => {
-      const row = document.createElement('div');
-      row.className = 'victory-row';
-      const key = document.createElement('span');
-      key.textContent = label;
-      const val = document.createElement('strong');
-      val.textContent = value;
-      row.append(key, val);
-      stats.appendChild(row);
+  function setPauseState(isPaused) {
+    const button = shell.querySelector('[data-action="pause"]');
+    button.setAttribute('aria-pressed', String(Boolean(isPaused)));
+    button.querySelector('[data-copy="pause-label"]').textContent = isPaused ? '继续' : '暂停';
+
+    const existingIcon = button.querySelector('svg, [data-lucide]');
+    const replacement = document.createElement('i');
+    replacement.setAttribute('data-lucide', isPaused ? 'play' : 'pause');
+    if (existingIcon) {
+      existingIcon.replaceWith(replacement);
+    } else {
+      button.prepend(replacement);
+    }
+    createIcons({ icons: { Pause, Play } });
+
+    shell.querySelector('#pause-overlay').classList.toggle('is-hidden', !isPaused);
+  }
+
+  function flashSaveStatus(message = '已存档') {
+    const label = shell.querySelector('[data-copy="save-label"]');
+    if (!label) return;
+    label.textContent = message;
+    clearTimeout(flashSaveStatus._timer);
+    flashSaveStatus._timer = setTimeout(() => {
+      label.textContent = '存档';
+    }, 1400);
+  }
+
+  function setStartLabel(label) {
+    const node = shell.querySelector('[data-copy="start-label"]');
+    if (node) node.textContent = label;
+  }
+
+  function formatTimestamp(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  }
+
+  function showArchivePanel() {
+    shell.querySelector('#archive-panel').classList.remove('is-hidden');
+  }
+
+  function hideArchivePanel() {
+    shell.querySelector('#archive-panel').classList.add('is-hidden');
+  }
+
+  function isArchivePanelVisible() {
+    return !shell.querySelector('#archive-panel').classList.contains('is-hidden');
+  }
+
+  function renderArchive(entries = [], handlers = {}) {
+    const list = shell.querySelector('[data-list="archive"]');
+    const empty = shell.querySelector('[data-copy="archive-empty"]');
+    list.innerHTML = '';
+    const hasEntries = entries.length > 0;
+    empty.classList.toggle('is-hidden', hasEntries);
+
+    entries.forEach((entry) => {
+      const item = document.createElement('li');
+      item.className = 'archive-item';
+      item.dataset.archiveId = entry.id;
+
+      const meta = document.createElement('div');
+      meta.className = 'archive-item__meta';
+      const title = document.createElement('strong');
+      title.textContent = entry.name;
+      const time = document.createElement('span');
+      time.textContent = formatTimestamp(entry.savedAt);
+      const stage = document.createElement('span');
+      stage.className = 'archive-item__stage';
+      stage.textContent = entry.summary ?? '';
+      meta.append(title, time, stage);
+
+      const actions = document.createElement('div');
+      actions.className = 'archive-item__actions';
+      const loadButton = document.createElement('button');
+      loadButton.type = 'button';
+      loadButton.className = 'ghost-action archive-item__load';
+      loadButton.textContent = '恢复';
+      loadButton.addEventListener('click', () => handlers.onLoad?.(entry.id));
+      const deleteButton = document.createElement('button');
+      deleteButton.type = 'button';
+      deleteButton.className = 'icon-action archive-item__delete';
+      deleteButton.setAttribute('aria-label', '删除');
+      deleteButton.innerHTML = '<i data-lucide="trash-2"></i>';
+      deleteButton.addEventListener('click', () => handlers.onDelete?.(entry.id));
+      actions.append(loadButton, deleteButton);
+
+      item.append(meta, actions);
+      list.appendChild(item);
     });
-    panel.classList.remove('is-hidden');
+
+    createIcons({ icons: { Trash2 } });
   }
 
   return {
     root: shell,
     startButton: shell.querySelector('[data-action="start"]'),
     resetButton: shell.querySelector('[data-action="reset"]'),
+    pauseButton: shell.querySelector('[data-action="pause"]'),
+    saveButton: shell.querySelector('[data-action="save"]'),
+    archiveButton: shell.querySelector('[data-action="archive"]'),
+    archiveCloseButton: shell.querySelector('[data-action="archive-close"]'),
     updateHud,
     updateWeapon,
     showUpgradePanel,
     hideUpgradePanel,
-    showVictory
+    setPauseState,
+    flashSaveStatus,
+    setStartLabel,
+    renderArchive,
+    showArchivePanel,
+    hideArchivePanel,
+    isArchivePanelVisible
   };
 }

@@ -82,6 +82,8 @@ button {
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-md);
+  position: relative;
+  z-index: 7;
 }
 
 .brand-block {
@@ -118,12 +120,89 @@ h2 {
 
 .primary-action,
 .icon-action,
-.weapon-choice {
+.weapon-choice,
+.ghost-action {
   pointer-events: auto;
   border: 1px solid rgba(215, 168, 75, 0.5);
   color: #f4efe0;
   background: rgba(16, 22, 19, 0.78);
   cursor: pointer;
+}
+
+.topbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.ghost-action {
+  min-height: 40px;
+  padding: 0 var(--space-md);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.ghost-action svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ghost-action:hover {
+  border-color: var(--color-support);
+  background: rgba(84, 198, 178, 0.16);
+}
+
+.ghost-action[aria-pressed="true"] {
+  border-color: var(--color-support);
+  color: var(--color-support);
+  background: rgba(84, 198, 178, 0.18);
+}
+
+.pause-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(11, 14, 22, 0.62);
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.pause-card {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-lg) var(--space-xl);
+  border: 1px solid rgba(215, 168, 75, 0.4);
+  border-radius: 12px;
+  background: rgba(16, 22, 19, 0.86);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.pause-card svg {
+  width: 36px;
+  height: 36px;
+  color: var(--color-accent);
+}
+
+.pause-card h2 {
+  color: var(--color-accent);
+}
+
+.pause-card p {
+  color: rgba(244, 239, 224, 0.78);
+  font-size: 13px;
 }
 
 .primary-action {
@@ -228,6 +307,7 @@ h2 {
   max-height: min(76vh, 620px);
   overflow: auto;
   pointer-events: auto;
+  z-index: 6;
   border-color: rgba(84, 198, 178, 0.52);
   background:
     linear-gradient(145deg, rgba(37, 52, 44, 0.94), rgba(16, 22, 19, 0.92)),
@@ -242,16 +322,14 @@ h2 {
   min-width: 260px;
 }
 
-.boss-meter,
-.victory-row {
+.boss-meter {
   display: flex;
   justify-content: space-between;
   gap: var(--space-md);
   font-size: 12px;
 }
 
-.boss-meter strong,
-.victory-row strong {
+.boss-meter strong {
   color: var(--color-accent);
 }
 
@@ -446,6 +524,11 @@ h2 {
   display: none !important;
 }
 
+.victory-panel,
+#victory-panel {
+  display: none !important;
+}
+
 .narrator-panel {
   grid-column: 2;
   grid-row: 3;
@@ -463,32 +546,6 @@ h2 {
   grid-column: 3;
   grid-row: 3;
   align-self: end;
-}
-
-.victory-panel {
-  grid-column: 2;
-  grid-row: 2;
-  align-self: center;
-  justify-self: center;
-  width: min(560px, 100%);
-  pointer-events: auto;
-  border-color: rgba(215, 168, 75, 0.56);
-}
-
-.victory-panel h3 {
-  margin: var(--space-md) 0 var(--space-xs);
-  color: var(--color-accent);
-  font-size: 20px;
-}
-
-.victory-panel p {
-  color: rgba(244, 239, 224, 0.8);
-}
-
-.victory-stats {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-sm) var(--space-md);
 }
 
 .route-panel {
@@ -577,12 +634,6 @@ h2 {
 
   .upgrade-choice__tags {
     max-width: 104px;
-  }
-
-  .victory-panel {
-    align-self: center;
-    max-height: calc(100vh - 120px);
-    overflow: auto;
   }
 
   .weapon-list {

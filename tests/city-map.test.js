@@ -13,6 +13,8 @@ describe('suzhou city map', () => {
   it('defines the scenic route landmarks', () => {
     expect(getLandmarkPosition('old-street')).toMatchObject({ title: '平江路老街' });
     expect(getLandmarkPosition('ancient-well')).toMatchObject({ title: '古井广场' });
+    expect(getLandmarkPosition('stone-bridge')).toMatchObject({ title: '水巷石桥' });
+    expect(getLandmarkPosition('garden-maze')).toMatchObject({ title: '园林曲径' });
     expect(getLandmarkPosition('city-tower')).toMatchObject({ title: '盘门水陆城门' });
   });
 
@@ -32,7 +34,7 @@ describe('suzhou city map', () => {
   });
 
   it('places objective points on passable city areas', () => {
-    ['lamps', 'echo-fragments', 'talismans'].forEach((type) => {
+    ['old-street-lamps', 'well-echo-fragments', 'bridge-lanterns', 'garden-echo-fragments', 'tower-talismans'].forEach((type) => {
       getStageObjectivePoints(type).forEach((point) => {
         expect(isBlockedCircle(point.x, point.y, 18)).toBe(false);
       });

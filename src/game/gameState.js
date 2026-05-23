@@ -1,6 +1,7 @@
 import { getWeaponDefinition } from './weapons.js';
 import { SUZHOU_CITY_MAP, getStageObjectivePoints } from './cityMap.js';
 import { STAGE_IDS, createStageProgress } from './stages.js';
+import { createBossEnemy } from './boss.js';
 
 export const MAP_SIZE = 4000;
 
@@ -56,16 +57,16 @@ export function createInitialGameState(initial = {}) {
   };
 }
 
-export function createLamps() {
-  return getStageObjectivePoints('lamps').map((lamp) => ({ ...lamp, lit: false }));
+export function createLamps(pointsKey = 'lamps') {
+  return getStageObjectivePoints(pointsKey).map((lamp) => ({ ...lamp, lit: false }));
 }
 
-export function createEchoFragments() {
-  return getStageObjectivePoints('echo-fragments').map((fragment) => ({ ...fragment, collected: false }));
+export function createEchoFragments(pointsKey = 'echo-fragments') {
+  return getStageObjectivePoints(pointsKey).map((fragment) => ({ ...fragment, collected: false }));
 }
 
-export function createTalismans() {
-  return getStageObjectivePoints('talismans').map((talisman) => ({ ...talisman, hp: 60, maxHp: 60, broken: false }));
+export function createTalismans(pointsKey = 'talismans') {
+  return getStageObjectivePoints(pointsKey).map((talisman) => ({ ...talisman, hp: 60, maxHp: 60, broken: false }));
 }
 
 export function createPlayer() {
@@ -105,4 +106,106 @@ export function createPlayer() {
 
 export function createTerrain() {
   return [];
+}
+
+export const SAVE_VERSION = 1;
+
+export function serializeGameState(state) {
+  return {
+    version: SAVE_VERSION,
+    savedAt: Date.now(),
+    gameState: state.gameState,
+    selectedWeapon: state.selectedWeapon,
+    currentStageIndex: state.currentStageIndex,
+    currentStageId: state.currentStageId,
+    stageStatus: state.stageStatus.map((entry) => ({ ...entry })),
+    objectives: {
+      progress: { ...state.objectives.progress },
+      lamps: state.objectives.lamps.map((lamp) => ({ ...lamp })),
+      echoFragments: state.objectives.echoFragments.map((fragment) => ({ ...fragment })),
+      talismans: state.objectives.talismans.map((talisman) => ({ ...talisman }))
+    },
+    kills: state.kills,
+    gameTime: state.gameTime,
+    camera: { ...state.camera },
+    player: { ...state.player },
+    boss: state.boss
+      ? {
+          active: state.boss.active,
+          defeated: state.boss.defeated,
+          phase: state.boss.phase,
+          hp: state.boss.hp,
+          maxHp: state.boss.maxHp
+        }
+      : null,
+    runStats: {
+      ...state.runStats,
+      selectedUpgrades: state.runStats.selectedUpgrades.map((upgrade) => ({ ...upgrade })),
+      stages: state.runStats.stages.map((stage) => ({ ...stage }))
+    }
+  };
+}
+
+export function applySavedState(state, save) {
+  if (!save || save.version !== SAVE_VERSION) return false;
+
+  const fresh = createInitialGameState({ selectedWeapon: save.selectedWeapon });
+  Object.assign(state, fresh);
+
+  state.gameState = save.gameState === 'gameover' ? 'playing' : save.gameState ?? 'playing';
+  state.selectedWeapon = save.selectedWeapon;
+  state.weapon = getWeaponDefinition(save.selectedWeapon);
+  state.currentStageIndex = save.currentStageIndex ?? 0;
+  state.currentStageId = save.currentStageId ?? STAGE_IDS[0];
+  state.stageStatus = save.stageStatus ?? state.stageStatus;
+  state.objectives.progress = { ...state.objectives.progress, ...save.objectives.progress };
+  if (save.objectives.lamps?.length) state.objectives.lamps = save.objectives.lamps.map((lamp) => ({ ...lamp }));
+  if (save.objectives.echoFragments?.length) state.objectives.echoFragments = save.objectives.echoFragments.map((fragment) => ({ ...fragment }));
+  if (save.objectives.talismans?.length) state.objectives.talismans = save.objectives.talismans.map((talisman) => ({ ...talisman }));
+  state.objectives.echoWaves = [];
+  state.kills = save.kills ?? 0;
+  state.gameTime = save.gameTime ?? 0;
+  state.camera = { ...save.camera };
+  state.player = { ...state.player, ...save.player };
+  state.runStats = {
+    ...state.runStats,
+    ...save.runStats,
+    selectedUpgrades: save.runStats?.selectedUpgrades?.map((upgrade) => ({ ...upgrade })) ?? [],
+    stages: save.runStats?.stages?.map((stage) => ({ ...stage })) ?? []
+  };
+
+  if (save.boss?.active && !save.boss.defeated) {
+    state.boss = {
+      active: true,
+      defeated: false,
+      id: 'mist-armor-general',
+      title: '雾甲守将',
+      phase: save.boss.phase ?? 1,
+      hp: save.boss.hp,
+      maxHp: save.boss.maxHp,
+      enemyRef: null,
+      telegraph: null,
+      attackTimer: 90,
+      summonTimer: 220
+    };
+    const bossEnemy = createBossEnemy(state.boss, { x: state.player.x, y: state.player.y - 240 });
+    bossEnemy.hp = save.boss.hp;
+    bossEnemy.maxHp = save.boss.maxHp;
+    state.boss.enemyRef = bossEnemy;
+    state.enemies = [bossEnemy];
+    state.gameState = 'boss';
+  } else {
+    state.boss = null;
+    state.enemies = [];
+  }
+
+  state.pendingUpgrades = [];
+  state.droppedWeapons = [];
+  state.projectiles = [];
+  state.particles = [];
+  state.damageTexts = [];
+  state.spawnTimer = 0;
+  state.screenShake = 0;
+  state.runSummary = null;
+  return true;
 }

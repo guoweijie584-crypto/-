@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { drawPlayer } from '../src/game/rendering.js';
+import { drawPlayer, render } from '../src/game/rendering.js';
 import { createInitialGameState } from '../src/game/gameState.js';
 
 function createContextMock() {
@@ -30,6 +30,27 @@ function createContextMock() {
 }
 
 describe('player rendering', () => {
+  it('draws a camera-relative world ground layer behind the player', () => {
+    const ctx = createContextMock();
+    const canvas = { width: 800, height: 600 };
+    const state = createInitialGameState({ selectedWeapon: 'sword' });
+    state.camera.x = 320;
+    state.camera.y = -240;
+
+    render(ctx, canvas, state, {
+      mouse: { worldX: state.player.x + 100, worldY: state.player.y },
+      keys: {}
+    });
+
+    expect(ctx.translate.mock.calls).toContainEqual([-state.camera.x, -state.camera.y]);
+    expect(ctx.fillRect.mock.calls).toContainEqual([
+      state.camera.x - 160,
+      state.camera.y - 160,
+      canvas.width + 320,
+      canvas.height + 320
+    ]);
+  });
+
   it('keeps the anime player body static while rotating six weapons around it', () => {
     const ctx = createContextMock();
     const state = createInitialGameState({ selectedWeapon: 'sword' });

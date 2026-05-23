@@ -1,7 +1,7 @@
 import { distance, spawnParticles, spawnText } from './effects.js';
 import { createBoss, createBossEnemy, getBossSnapshot, isBossEnemy, syncBossFromEnemy, updateBoss } from './boss.js';
 import { createEnemy } from './enemies.js';
-import { createEchoFragments, createInitialGameState, createTalismans } from './gameState.js';
+import { applySavedState, createEchoFragments, createInitialGameState, createLamps, createTalismans, serializeGameState } from './gameState.js';
 import {
   clampToCityBounds,
   getPassableSpawnPoint,
@@ -34,6 +34,7 @@ export function mountGame(container, options = {}) {
   const sound = options.sound ?? createSoundController();
   let animationFrame = 0;
   let running = false;
+  let paused = false;
   let input;
 
   function resizeCanvas() {
@@ -50,6 +51,7 @@ export function mountGame(container, options = {}) {
   function getSnapshot() {
     return {
       status: state.gameState,
+      paused,
       player: {
         hp: Math.max(0, Math.floor(state.player.hp)),
         maxHp: state.player.maxHp,
@@ -92,11 +94,41 @@ export function mountGame(container, options = {}) {
   }
 
   function reset() {
+    paused = false;
     Object.assign(state, createInitialGameState({ selectedWeapon: state.selectedWeapon }));
     resizeCanvas();
     centerCameraOnPlayer();
     updateUI();
     render(ctx, canvas, state, input);
+  }
+
+  function setPaused(value) {
+    const next = Boolean(value);
+    if (paused === next) return paused;
+    paused = next;
+    emit('game:paused', { paused });
+    updateUI();
+    render(ctx, canvas, state, input);
+    return paused;
+  }
+
+  function togglePause() {
+    return setPaused(!paused);
+  }
+
+  function saveSnapshot() {
+    return serializeGameState(state);
+  }
+
+  function loadSnapshot(save) {
+    const ok = applySavedState(state, save);
+    if (!ok) return false;
+    paused = false;
+    resizeCanvas();
+    centerCameraOnPlayer();
+    updateUI();
+    render(ctx, canvas, state, input);
+    return true;
   }
 
   function setWeapon(weaponId) {
@@ -337,6 +369,7 @@ export function mountGame(container, options = {}) {
   }
 
   function update() {
+    if (paused) return;
     if (state.gameState !== 'playing' && state.gameState !== 'boss') return;
 
     const { player, camera } = state;
@@ -393,7 +426,11 @@ export function mountGame(container, options = {}) {
   }
 
   function updateObjectives() {
-    if (state.currentStageId === 'old-street') {
+    const progress = state.objectives.progress;
+    if (progress.type === 'lamps') {
+      if (state.objectives.lamps.length === 0) {
+        state.objectives.lamps = createLamps(progress.pointsKey);
+      }
       state.objectives.lamps.forEach((lamp) => {
         if (!lamp.lit && state.kills >= 2 && distance(state.player.x, state.player.y, lamp.x, lamp.y) < 70) {
           lamp.lit = true;
@@ -405,9 +442,9 @@ export function mountGame(container, options = {}) {
       });
     }
 
-    if (state.currentStageId === 'ancient-well') {
+    if (progress.type === 'echo-fragments') {
       if (state.objectives.echoFragments.length === 0) {
-        state.objectives.echoFragments = createEchoFragments();
+        state.objectives.echoFragments = createEchoFragments(progress.pointsKey);
       }
 
       state.objectives.echoFragments.forEach((fragment) => {
@@ -433,8 +470,8 @@ export function mountGame(container, options = {}) {
       }
     }
 
-    if (state.currentStageId === 'city-tower' && state.objectives.talismans.length === 0) {
-      state.objectives.talismans = createTalismans();
+    if (progress.type === 'talismans' && state.objectives.talismans.length === 0) {
+      state.objectives.talismans = createTalismans(progress.pointsKey);
       updateObjectiveProgress();
     }
   }
@@ -442,11 +479,11 @@ export function mountGame(container, options = {}) {
   function updateObjectiveProgress() {
     if (state.gameState !== 'playing') return;
     const progress = state.objectives.progress;
-    if (state.currentStageId === 'old-street') {
+    if (progress.type === 'lamps') {
       progress.current = state.objectives.lamps.filter((lamp) => lamp.lit).length;
-    } else if (state.currentStageId === 'ancient-well') {
+    } else if (progress.type === 'echo-fragments') {
       progress.current = state.objectives.echoFragments.filter((fragment) => fragment.collected).length;
-    } else if (state.currentStageId === 'city-tower') {
+    } else if (progress.type === 'talismans') {
       progress.current = state.objectives.talismans.filter((talisman) => talisman.broken).length;
     }
     progress.complete = progress.current >= progress.target;
@@ -479,17 +516,26 @@ export function mountGame(container, options = {}) {
     state.currentStageId = STAGES[state.currentStageIndex].id;
     state.objectives.progress = createStageProgress(state.currentStageId);
     state.enemies = [];
-    if (state.currentStageId === 'ancient-well') {
-      state.objectives.echoFragments = createEchoFragments();
-      state.objectives.echoWaves = [];
-    }
-    if (state.currentStageId === 'city-tower') {
-      state.objectives.talismans = createTalismans();
-    }
+    setupStageObjectives();
     spawnText(state, state.player.x, state.player.y - 70, getStageDefinition(state.currentStageId).title, '#D7A84B', 22);
     sound.play('stage');
     emit('game:stage-changed', getSnapshot());
     updateUI();
+  }
+
+  function setupStageObjectives() {
+    const progress = state.objectives.progress;
+    state.objectives.lamps = [];
+    state.objectives.echoFragments = [];
+    state.objectives.echoWaves = [];
+    state.objectives.talismans = [];
+    if (progress.type === 'lamps') {
+      state.objectives.lamps = createLamps(progress.pointsKey);
+    } else if (progress.type === 'echo-fragments') {
+      state.objectives.echoFragments = createEchoFragments(progress.pointsKey);
+    } else if (progress.type === 'talismans') {
+      state.objectives.talismans = createTalismans(progress.pointsKey);
+    }
   }
 
   function startBoss() {
@@ -775,6 +821,11 @@ export function mountGame(container, options = {}) {
     setWeapon,
     selectUpgrade,
     getSnapshot,
+    setPaused,
+    togglePause,
+    isPaused: () => paused,
+    saveSnapshot,
+    loadSnapshot,
     _debug: { state, canvas }
   };
 }
