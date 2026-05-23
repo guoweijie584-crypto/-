@@ -16,7 +16,14 @@ const context = {
   moveTo: vi.fn(),
   lineTo: vi.fn(),
   ellipse: vi.fn(),
-  fillText: vi.fn()
+  fillText: vi.fn(),
+  closePath: vi.fn(),
+  strokeRect: vi.fn(),
+  rect: vi.fn(),
+  scale: vi.fn(),
+  quadraticCurveTo: vi.fn(),
+  createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+  createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() }))
 };
 
 HTMLCanvasElement.prototype.getContext = vi.fn(() => context);

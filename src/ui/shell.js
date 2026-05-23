@@ -1,5 +1,7 @@
 import {
   BadgeInfo,
+  CircleDot,
+  Gauge,
   MapPinned,
   ScrollText,
   Shield,
@@ -181,13 +183,56 @@ export function renderShell(root, state, content) {
       button.type = 'button';
       button.className = 'upgrade-choice';
       button.dataset.upgrade = upgrade.id;
+      const header = document.createElement('span');
+      header.className = 'upgrade-choice__header';
+      const icon = document.createElement('span');
+      icon.className = 'upgrade-choice__icon';
+      icon.innerHTML = '<i data-lucide="circle-dot"></i>';
       const title = document.createElement('strong');
       title.textContent = upgrade.title;
+      const tags = document.createElement('span');
+      tags.className = 'upgrade-choice__tags';
+      [upgrade.school, upgrade.tier].filter(Boolean).forEach((label) => {
+        const tag = document.createElement('em');
+        tag.textContent = label;
+        tags.appendChild(tag);
+      });
+      header.append(icon, title, tags);
+
       const desc = document.createElement('span');
+      desc.className = 'upgrade-choice__summary';
       desc.textContent = upgrade.desc;
-      button.append(title, desc);
+
+      const effects = document.createElement('span');
+      effects.className = 'upgrade-choice__effects';
+      (upgrade.effects ?? []).forEach((effect) => {
+        const item = document.createElement('span');
+        item.textContent = effect;
+        effects.appendChild(item);
+      });
+
+      const focus = document.createElement('span');
+      focus.className = 'upgrade-choice__focus';
+      const focusLabel = upgrade.focus?.label ?? '收益';
+      const focusValue = Math.max(0, Math.min(100, upgrade.focus?.value ?? 70));
+      focus.innerHTML = `
+        <span><i data-lucide="gauge"></i>${focusLabel}</span>
+        <b style="--value:${focusValue}%"></b>
+      `;
+
+      const tactic = document.createElement('span');
+      tactic.className = 'upgrade-choice__tactic';
+      tactic.textContent = upgrade.tactic ?? '选择后立即生效。';
+
+      button.append(header, desc, effects, focus, tactic);
       button.addEventListener('click', () => onSelect(upgrade.id));
       list.appendChild(button);
+    });
+    createIcons({
+      icons: {
+        CircleDot,
+        Gauge
+      }
     });
     panel.classList.remove('is-hidden');
   }

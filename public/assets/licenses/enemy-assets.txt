@@ -1,0 +1,13 @@
+Enemy sprite asset notes
+
+- Ghost monster: OpenGameArt "Ghost monster" by ImogiaGames, remixed from Ghost and Skeleton by Balmer. License: CC0.
+  Source: https://opengameart.org/content/ghost-monster
+  Local file: /assets/enemies/ghost-monster.png
+
+- Horror fantasy 32x32 spritesheet: OpenGameArt horror/fantasy 32x32 icon sheet. License: CC0.
+  Source: https://opengameart.org/content/horror-fantasy-32x32-icons
+  Local file: /assets/enemies/horror-fantasy-spritesheet.png
+
+- Walking green monster package downloaded for review but not currently used by the game renderer.
+  Source: https://opengameart.org/content/walking-green-monster-game-character
+  Local file retained: /assets/enemies/green-monster.png

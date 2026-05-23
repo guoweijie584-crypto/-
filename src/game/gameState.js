@@ -1,4 +1,5 @@
 import { getWeaponDefinition } from './weapons.js';
+import { SUZHOU_CITY_MAP, getStageObjectivePoints } from './cityMap.js';
 import { STAGE_IDS, createStageProgress } from './stages.js';
 
 export const MAP_SIZE = 4000;
@@ -34,7 +35,7 @@ export function createInitialGameState(initial = {}) {
     spawnTimer: 0,
     screenShake: 0,
     camera: { x: 0, y: 0 },
-    terrain: { decorations: createTerrain() },
+    terrain: { cityMap: SUZHOU_CITY_MAP, decorations: createTerrain() },
     player: createPlayer(),
     boss: null,
     runSummary: null,
@@ -56,35 +57,21 @@ export function createInitialGameState(initial = {}) {
 }
 
 export function createLamps() {
-  return [
-    { id: 'lamp-1', x: -180, y: -140, lit: false },
-    { id: 'lamp-2', x: 180, y: -120, lit: false },
-    { id: 'lamp-3', x: 20, y: 190, lit: false }
-  ];
+  return getStageObjectivePoints('lamps').map((lamp) => ({ ...lamp, lit: false }));
 }
 
 export function createEchoFragments() {
-  return [
-    { id: 'echo-1', x: -220, y: -80, collected: false },
-    { id: 'echo-2', x: 210, y: -120, collected: false },
-    { id: 'echo-3', x: -80, y: 220, collected: false },
-    { id: 'echo-4', x: 260, y: 190, collected: false },
-    { id: 'echo-5', x: 10, y: 0, collected: false }
-  ];
+  return getStageObjectivePoints('echo-fragments').map((fragment) => ({ ...fragment, collected: false }));
 }
 
 export function createTalismans() {
-  return [
-    { id: 'talisman-1', x: -240, y: 80, hp: 60, maxHp: 60, broken: false },
-    { id: 'talisman-2', x: 0, y: -220, hp: 60, maxHp: 60, broken: false },
-    { id: 'talisman-3', x: 240, y: 80, hp: 60, maxHp: 60, broken: false }
-  ];
+  return getStageObjectivePoints('talismans').map((talisman) => ({ ...talisman, hp: 60, maxHp: 60, broken: false }));
 }
 
 export function createPlayer() {
   return {
-    x: 0,
-    y: 0,
+    x: 835,
+    y: -1110,
     radius: 22,
     speed: 4.5,
     hp: 100,
@@ -119,7 +106,7 @@ export function createPlayer() {
 export function createTerrain() {
   const decorations = [];
 
-  for (let i = 0; i < 2000; i += 1) {
+  for (let i = 0; i < 120; i += 1) {
     decorations.push({
       x: (Math.random() - 0.5) * MAP_SIZE,
       y: (Math.random() - 0.5) * MAP_SIZE,

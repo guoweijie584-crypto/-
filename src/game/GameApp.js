@@ -1,9 +1,17 @@
 import { distance, spawnParticles, spawnText } from './effects.js';
 import { createBoss, createBossEnemy, getBossSnapshot, isBossEnemy, syncBossFromEnemy, updateBoss } from './boss.js';
 import { createEnemy } from './enemies.js';
-import { MAP_SIZE, createEchoFragments, createInitialGameState, createTalismans } from './gameState.js';
+import { createEchoFragments, createInitialGameState, createTalismans } from './gameState.js';
+import {
+  clampToCityBounds,
+  getPassableSpawnPoint,
+  isBlockedCircle,
+  isSegmentBlocked,
+  moveCircleWithCollisions,
+  resolveBlockedCircle
+} from './cityMap.js';
 import { createInputController } from './input.js';
-import { render } from './rendering.js';
+import { onEnemySpritesReady, onPlayerSpriteReady, render } from './rendering.js';
 import { createRunSummary } from './runSummary.js';
 import { STAGES, createStageProgress, getStageDefinition, getStageSnapshot } from './stages.js';
 import { getWeaponDefinition, getWeaponUpgrades } from './weapons.js';
@@ -57,7 +65,7 @@ export function mountGame(container, options = {}) {
         trait: state.weapon.trait,
         attack: state.weapon.attack
       },
-      pendingUpgrades: state.pendingUpgrades.map(({ id, title, desc }) => ({ id, title, desc })),
+      pendingUpgrades: state.pendingUpgrades.map(toUpgradeViewModel),
       runStats: {
         selectedWeapon: state.runStats.selectedWeapon,
         selectedUpgrades: state.runStats.selectedUpgrades,
@@ -90,12 +98,13 @@ export function mountGame(container, options = {}) {
   }
 
   function setWeapon(weaponId) {
-    if (state.gameTime > 0 || state.gameState !== 'playing') return;
+    if (state.gameState !== 'playing') return;
     const weapon = getWeaponDefinition(weaponId);
     state.selectedWeapon = weapon.id;
     state.weapon = weapon;
     state.runStats.selectedWeapon = weapon.id;
     updateUI();
+    render(ctx, canvas, state, input);
   }
 
   function triggerUltimate() {
@@ -132,8 +141,10 @@ export function mountGame(container, options = {}) {
 
     const angle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
     droppedWeapons.push({
+      weaponId: state.selectedWeapon,
       x: player.x,
       y: player.y,
+      angle,
       vx: Math.cos(angle) * 16,
       vy: Math.sin(angle) * 16,
       radius: 18,
@@ -150,10 +161,7 @@ export function mountGame(container, options = {}) {
   function spawnEnemy() {
     const { player } = state;
     const stage = getStageDefinition(state.currentStageId);
-    const angle = Math.random() * Math.PI * 2;
-    const dist = Math.max(canvas.width, canvas.height) / 2 + 150;
-    const x = player.x + Math.cos(angle) * dist;
-    const y = player.y + Math.sin(angle) * dist;
+    const { x, y } = getPassableSpawnPoint(player, Math.max(canvas.width, canvas.height) / 2);
     const enemyType = stage.enemies[Math.floor(Math.random() * stage.enemies.length)];
     state.enemies.push(createEnemy(enemyType, { x, y }, state.gameTime));
   }
@@ -182,10 +190,8 @@ export function mountGame(container, options = {}) {
     const dashDistance = attack.style === 'thrust-dash' ? attack.dash * (1 + player.spearDashBoost) : 0;
 
     if (dashDistance > 0) {
-      player.x += Math.cos(aimAngle) * dashDistance;
-      player.y += Math.sin(aimAngle) * dashDistance;
-      player.x = Math.max(-MAP_SIZE / 2, Math.min(MAP_SIZE / 2, player.x));
-      player.y = Math.max(-MAP_SIZE / 2, Math.min(MAP_SIZE / 2, player.y));
+      moveCircleWithCollisions(player, Math.cos(aimAngle) * dashDistance, Math.sin(aimAngle) * dashDistance, player.radius);
+      clampToCityBounds(player, player.radius);
       spawnParticles(state, player.x, player.y, '#54C6B2', 10, 5, 0.04);
     }
 
@@ -197,8 +203,7 @@ export function mountGame(container, options = {}) {
         if (Math.abs(angleDiff) <= attack.arc / 2) {
           damageEnemy(enemy, realDamage, false, swingColor);
           const knockback = attack.knockback * player.knockbackMult;
-          enemy.x += Math.cos(aimAngle) * knockback;
-          enemy.y += Math.sin(aimAngle) * knockback;
+          moveCircleWithCollisions(enemy, Math.cos(aimAngle) * knockback, Math.sin(aimAngle) * knockback, enemy.radius);
         }
       }
     });
@@ -278,12 +283,17 @@ export function mountGame(container, options = {}) {
   }
 
   function showUpgradeScreen() {
-    state.pendingUpgrades = getWeaponUpgrades(state.selectedWeapon);
+    state.pendingUpgrades = getWeaponUpgrades(state.selectedWeapon, state.player.level);
     emit('game:upgrade-available', {
       weaponId: state.selectedWeapon,
-      upgrades: state.pendingUpgrades.map(({ id, title, desc }) => ({ id, title, desc }))
+      level: state.player.level,
+      upgrades: state.pendingUpgrades.map(toUpgradeViewModel)
     });
     updateUI();
+  }
+
+  function toUpgradeViewModel({ id, title, school, tier, desc, effects, tactic, focus }) {
+    return { id, title, school, tier, desc, effects, tactic, focus };
   }
 
   function selectUpgrade(upgradeId) {
@@ -334,12 +344,10 @@ export function mountGame(container, options = {}) {
 
     if (mx !== 0 || my !== 0) {
       const len = Math.sqrt(mx * mx + my * my);
-      player.x += (mx / len) * player.speed;
-      player.y += (my / len) * player.speed;
+      moveCircleWithCollisions(player, (mx / len) * player.speed, (my / len) * player.speed, player.radius);
     }
 
-    player.x = Math.max(-MAP_SIZE / 2, Math.min(MAP_SIZE / 2, player.x));
-    player.y = Math.max(-MAP_SIZE / 2, Math.min(MAP_SIZE / 2, player.y));
+    clampToCityBounds(player, player.radius);
 
     if (player.attackTimer > 0) player.attackTimer -= 1;
     if (mouse.isLeftDown && player.attackTimer === 0) performAttack();
@@ -523,8 +531,14 @@ export function mountGame(container, options = {}) {
     const { player } = state;
     state.droppedWeapons.slice().forEach((weapon) => {
       if (weapon.isFlying) {
-        weapon.x += weapon.vx;
-        weapon.y += weapon.vy;
+        if (isBlockedCircle(weapon.x + weapon.vx, weapon.y + weapon.vy, weapon.radius)) {
+          weapon.isFlying = false;
+          weapon.vx = 0;
+          weapon.vy = 0;
+        } else {
+          weapon.x += weapon.vx;
+          weapon.y += weapon.vy;
+        }
         weapon.vx *= weapon.friction;
         weapon.vy *= weapon.friction;
         spawnParticles(state, weapon.x, weapon.y, '#54C6B2', 1, 1, 0.05);
@@ -573,8 +587,15 @@ export function mountGame(container, options = {}) {
         projectile.hitEnemies = true;
         projectile.duration -= 1;
       } else if (projectile.type === 'wave') {
-        projectile.x += projectile.vx;
-        projectile.y += projectile.vy;
+        const nextX = projectile.x + projectile.vx;
+        const nextY = projectile.y + projectile.vy;
+        if (isSegmentBlocked(projectile.x, projectile.y, nextX, nextY, Math.max(6, projectile.radius * 0.18))) {
+          projectile.duration = 0;
+          spawnParticles(state, projectile.x, projectile.y, projectile.color, 8, 2, 0.08);
+          return;
+        }
+        projectile.x = nextX;
+        projectile.y = nextY;
         spawnParticles(state, projectile.x, projectile.y, projectile.color, 2, 2, 0.1);
         state.enemies.slice().forEach((enemy) => {
           if (!projectile.hitEnemies.has(enemy) && distance(projectile.x, projectile.y, enemy.x, enemy.y) < projectile.radius + enemy.radius) {
@@ -602,12 +623,12 @@ export function mountGame(container, options = {}) {
   function updateEnemies() {
     const { player } = state;
     state.enemies.forEach((enemy) => {
+      resolveBlockedCircle(enemy, enemy.radius);
       if (enemy.hitCooldown > 0) enemy.hitCooldown -= 1;
 
       if (enemy.behavior === 'fast-chase') {
         const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
-        enemy.x += Math.cos(angle) * enemy.speed;
-        enemy.y += Math.sin(angle) * enemy.speed;
+        moveEnemy(enemy, Math.cos(angle) * enemy.speed, Math.sin(angle) * enemy.speed);
 
         if (distance(enemy.x, enemy.y, player.x, player.y) < enemy.radius + player.radius && enemy.hitCooldown === 0) {
           hurtPlayer(enemy.damage);
@@ -615,8 +636,7 @@ export function mountGame(container, options = {}) {
         }
       } else if (enemy.behavior === 'surround') {
         const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x) + Math.sin(state.gameTime + enemy.seed * 6) * 0.45;
-        enemy.x += Math.cos(angle) * enemy.speed;
-        enemy.y += Math.sin(angle) * enemy.speed;
+        moveEnemy(enemy, Math.cos(angle) * enemy.speed, Math.sin(angle) * enemy.speed);
         if (distance(enemy.x, enemy.y, player.x, player.y) < enemy.radius + player.radius && enemy.hitCooldown === 0) {
           hurtPlayer(enemy.damage);
           enemy.hitCooldown = 50;
@@ -625,11 +645,9 @@ export function mountGame(container, options = {}) {
         const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
         const d = distance(enemy.x, enemy.y, player.x, player.y);
         if (d > 260) {
-          enemy.x += Math.cos(angle) * enemy.speed;
-          enemy.y += Math.sin(angle) * enemy.speed;
+          moveEnemy(enemy, Math.cos(angle) * enemy.speed, Math.sin(angle) * enemy.speed);
         } else {
-          enemy.x -= Math.cos(angle) * enemy.speed * 0.45;
-          enemy.y -= Math.sin(angle) * enemy.speed * 0.45;
+          moveEnemy(enemy, -Math.cos(angle) * enemy.speed * 0.45, -Math.sin(angle) * enemy.speed * 0.45);
         }
         enemy.actionTimer -= 1;
         if (enemy.actionTimer <= 0) {
@@ -645,6 +663,29 @@ export function mountGame(container, options = {}) {
         }
       }
     });
+  }
+
+  function moveEnemy(enemy, dx, dy) {
+    if (tryMoveEnemy(enemy, dx, dy)) return;
+
+    const speed = Math.sqrt(dx * dx + dy * dy);
+    const baseAngle = Math.atan2(dy, dx);
+    const offsets = [Math.PI / 4, -Math.PI / 4, Math.PI / 2, -Math.PI / 2, Math.PI * 0.75, -Math.PI * 0.75];
+    for (const offset of offsets) {
+      if (tryMoveEnemy(enemy, Math.cos(baseAngle + offset) * speed, Math.sin(baseAngle + offset) * speed)) return;
+    }
+
+    resolveBlockedCircle(enemy, enemy.radius);
+  }
+
+  function tryMoveEnemy(enemy, dx, dy) {
+    const beforeX = enemy.x;
+    const beforeY = enemy.y;
+    const nextX = beforeX + dx;
+    const nextY = beforeY + dy;
+    if (isSegmentBlocked(beforeX, beforeY, nextX, nextY, enemy.radius)) return false;
+    moveCircleWithCollisions(enemy, dx, dy, enemy.radius);
+    return enemy.x !== beforeX || enemy.y !== beforeY;
   }
 
   function updateParticles() {
@@ -688,6 +729,12 @@ export function mountGame(container, options = {}) {
   centerCameraOnPlayer();
   render(ctx, canvas, state, input);
   updateUI();
+  const cleanupSpriteReady = onPlayerSpriteReady(() => {
+    render(ctx, canvas, state, input);
+  });
+  const cleanupEnemySpritesReady = onEnemySpritesReady(() => {
+    render(ctx, canvas, state, input);
+  });
 
   const onResize = () => {
     resizeCanvas();
@@ -701,6 +748,8 @@ export function mountGame(container, options = {}) {
     stop() {
       stop();
       window.removeEventListener('resize', onResize);
+      cleanupSpriteReady();
+      cleanupEnemySpritesReady();
       input.destroy();
     },
     reset,

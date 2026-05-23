@@ -49,13 +49,26 @@ describe('renderShell', () => {
     const shell = renderShell(root, state, demoContent);
 
     shell.showUpgradePanel([
-      { id: 'sword-flow', title: '流云剑步', desc: '移动速度提升' },
+      {
+        id: 'sword-flow',
+        title: '流云剑步',
+        school: '身法',
+        tier: '轻灵',
+        desc: '移动速度提升',
+        effects: ['移动速度 +12%', '攻击冷却 -2 帧'],
+        tactic: '适合边走位边清理灯影妖。',
+        focus: { label: '机动', value: 86 }
+      },
       { id: 'sword-wave', title: '青锋剑气', desc: '剑气提升' },
       { id: 'sword-focus', title: '听风破影', desc: '伤害提升' }
     ]);
 
     expect(root.querySelector('#upgrade-panel').classList.contains('is-hidden')).toBe(false);
     expect(root.textContent).toContain('流云剑步');
+    expect(root.textContent).toContain('身法');
+    expect(root.textContent).toContain('移动速度 +12%');
+    expect(root.textContent).toContain('适合边走位边清理灯影妖。');
+    expect(root.querySelector('.upgrade-choice__focus b').getAttribute('style')).toContain('--value:86%');
     expect(root.querySelectorAll('.upgrade-choice')).toHaveLength(3);
   });
 
