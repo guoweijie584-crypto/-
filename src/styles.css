@@ -558,6 +558,12 @@ h2 {
   min-height: 112px;
 }
 
+.completion-panel,
+.route-panel {
+  max-height: min(42vh, 360px);
+  overflow: auto;
+}
+
 .compact-panel p,
 .narrator-panel p {
   color: rgba(244, 239, 224, 0.78);
@@ -633,6 +639,64 @@ h2 {
   background: rgba(244, 239, 224, 0.1);
   color: rgba(244, 239, 224, 0.78);
   font-size: 12px;
+}
+
+.travel-card-title,
+.route-text {
+  display: block;
+  color: var(--color-cream);
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.reward-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-xs);
+  margin: var(--space-sm) 0;
+}
+
+.reward-stat {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid rgba(244, 239, 224, 0.12);
+  border-radius: 8px;
+  background: rgba(244, 239, 224, 0.07);
+}
+
+.reward-stat span {
+  color: rgba(244, 239, 224, 0.58);
+  font-size: 11px;
+}
+
+.reward-stat strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-cream);
+  font-size: 13px;
+}
+
+.travel-card-comment,
+.route-summary {
+  margin: var(--space-sm) 0;
+}
+
+.reward-card-list,
+.route-stop-list {
+  display: grid;
+  gap: var(--space-xs);
+  margin: var(--space-sm) 0 0;
+  padding-left: 18px;
+  color: rgba(244, 239, 224, 0.78);
+  font-size: 12px;
+}
+
+.reward-card-list li,
+.route-stop-list li {
+  padding-left: 2px;
+  overflow-wrap: anywhere;
 }
 
 .reset-action {

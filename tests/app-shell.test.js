@@ -94,4 +94,62 @@ describe('renderShell', () => {
     expect(root.querySelector('#victory-panel')).toBeNull();
     expect(root.textContent).not.toContain('破阵成功');
   });
+
+  it('renders and resets the final travel card', () => {
+    const root = document.createElement('div');
+    const state = createAppState();
+    const shell = renderShell(root, state, demoContent);
+
+    shell.updateCompletionCard({
+      title: '剑定山河',
+      comment: '气血尚足，以剑清出 5/5 处夜巡线索。',
+      selectedWeaponName: '剑',
+      kills: 52,
+      remainingHp: 86,
+      completionTime: 213.2,
+      clearedStageCount: 5,
+      totalStageCount: 5,
+      unlockedCards: demoContent.cultureCards
+    });
+
+    expect(root.querySelector('#completion-panel').textContent).toContain('江湖游历卡');
+    expect(root.querySelector('#completion-panel').textContent).toContain('剑定山河');
+    expect(root.querySelector('#completion-panel').textContent).toContain('兵器');
+    expect(root.querySelector('#completion-panel').textContent).toContain('剑');
+    expect(root.querySelector('#completion-panel').textContent).toContain('52');
+    expect(root.querySelector('#completion-panel').textContent).toContain('86');
+    expect(root.querySelector('#completion-panel').textContent).toContain('3分33秒');
+    expect(root.querySelector('#completion-panel').textContent).toContain('老街灯影阵');
+
+    shell.resetRewardPanels();
+
+    expect(root.querySelector('#completion-panel').textContent).toContain('江湖游历卡待生成');
+  });
+
+  it('renders and resets the five-stop route recommendation', () => {
+    const root = document.createElement('div');
+    const state = createAppState();
+    const shell = renderShell(root, state, demoContent);
+
+    shell.updateRoute({
+      routeText: '老街 -> 古井 -> 石桥 -> 园林 -> 城楼',
+      summary: '夜巡路线建议：老街 -> 古井 -> 石桥 -> 园林 -> 城楼。',
+      stopLines: [
+        '老街：从老街入口进入，先看街巷灯火和沿街铺面。',
+        '古井：转入古井点位，观察井沿、水脉与周边巷口。',
+        '石桥：沿水巷走到石桥，留意桥面、栏板和河岸灯影。',
+        '园林：进入园林曲径，寻找漏窗、框景和转角视线。',
+        '城楼：最后登临城楼，回望整条古城夜巡路线。'
+      ]
+    });
+
+    expect(root.querySelector('#route-panel').textContent).toContain('夜巡游线');
+    expect(root.querySelector('#route-panel').textContent).toContain('老街 -> 古井 -> 石桥 -> 园林 -> 城楼');
+    expect(root.querySelectorAll('#route-panel li')).toHaveLength(5);
+    expect(root.querySelector('#route-panel').textContent).toContain('最后登临城楼');
+
+    shell.resetRewardPanels();
+
+    expect(root.querySelector('#route-panel').textContent).toContain('游览路线待推荐');
+  });
 });

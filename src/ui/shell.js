@@ -279,6 +279,152 @@ export function renderShell(root, state, content) {
     body.append(count, card, list);
   }
 
+  function formatDuration(seconds = 0) {
+    const total = Math.max(0, Math.round(seconds));
+    const minutes = Math.floor(total / 60);
+    const rest = total % 60;
+    return `${minutes}分${String(rest).padStart(2, '0')}秒`;
+  }
+
+  function resetCompletionPanel() {
+    const panel = shell.querySelector('#completion-panel');
+    panel.innerHTML = '';
+
+    const header = document.createElement('div');
+    header.className = 'panel-title';
+    const icon = document.createElement('i');
+    icon.setAttribute('data-lucide', 'shield');
+    const title = document.createElement('h2');
+    title.textContent = content.uiPlaceholders.completion;
+    header.append(icon, title);
+
+    const copy = document.createElement('p');
+    copy.textContent = '尚未破阵';
+
+    panel.append(header, copy);
+    createIcons({ icons: { Shield } });
+  }
+
+  function resetRoutePanel() {
+    const panel = shell.querySelector('#route-panel');
+    panel.innerHTML = '';
+
+    const header = document.createElement('div');
+    header.className = 'panel-title';
+    const icon = document.createElement('i');
+    icon.setAttribute('data-lucide', 'map-pinned');
+    const title = document.createElement('h2');
+    title.textContent = content.uiPlaceholders.route;
+    header.append(icon, title);
+
+    const copy = document.createElement('p');
+    copy.textContent = '通关后解锁文化线索与游览路线。';
+
+    panel.append(header, copy);
+    createIcons({ icons: { MapPinned } });
+  }
+
+  function resetRewardPanels() {
+    resetCompletionPanel();
+    resetRoutePanel();
+  }
+
+  function createRewardStat(label, value) {
+    const item = document.createElement('div');
+    item.className = 'reward-stat';
+    const labelNode = document.createElement('span');
+    labelNode.textContent = label;
+    const valueNode = document.createElement('strong');
+    valueNode.textContent = value;
+    item.append(labelNode, valueNode);
+    return item;
+  }
+
+  function updateCompletionCard(card = null) {
+    if (!card) {
+      resetCompletionPanel();
+      return;
+    }
+
+    const panel = shell.querySelector('#completion-panel');
+    panel.innerHTML = '';
+
+    const header = document.createElement('div');
+    header.className = 'panel-title';
+    const icon = document.createElement('i');
+    icon.setAttribute('data-lucide', 'shield');
+    const heading = document.createElement('h2');
+    heading.textContent = '江湖游历卡';
+    header.append(icon, heading);
+
+    const title = document.createElement('strong');
+    title.className = 'travel-card-title';
+    title.textContent = card.title ?? '夜巡归档';
+
+    const stats = document.createElement('div');
+    stats.className = 'reward-stats';
+    stats.append(
+      createRewardStat('兵器', card.selectedWeaponName ?? '未知'),
+      createRewardStat('击杀', String(card.kills ?? 0)),
+      createRewardStat('余血', String(card.remainingHp ?? 0)),
+      createRewardStat('用时', formatDuration(card.completionTime)),
+      createRewardStat('线索', `${card.clearedStageCount ?? 0}/${card.totalStageCount ?? content.route.length}`),
+      createRewardStat('文化卡', `${card.unlockedCards?.length ?? 0}/${content.cultureCards.length}`)
+    );
+
+    const comment = document.createElement('p');
+    comment.className = 'travel-card-comment';
+    comment.textContent = card.comment ?? '';
+
+    const list = document.createElement('ol');
+    list.className = 'reward-card-list';
+    (card.unlockedCards ?? []).forEach((cultureCard) => {
+      const item = document.createElement('li');
+      item.textContent = cultureCard.title;
+      list.appendChild(item);
+    });
+
+    panel.append(header, title, stats, comment, list);
+    createIcons({ icons: { Shield } });
+  }
+
+  function updateRoute(routeView = null) {
+    if (!routeView) {
+      resetRoutePanel();
+      return;
+    }
+
+    const panel = shell.querySelector('#route-panel');
+    panel.innerHTML = '';
+
+    const header = document.createElement('div');
+    header.className = 'panel-title';
+    const icon = document.createElement('i');
+    icon.setAttribute('data-lucide', 'map-pinned');
+    const heading = document.createElement('h2');
+    heading.textContent = '夜巡游线';
+    header.append(icon, heading);
+
+    const routeText = document.createElement('strong');
+    routeText.className = 'route-text';
+    routeText.textContent = routeView.routeText ?? '';
+
+    const summary = document.createElement('p');
+    summary.className = 'route-summary';
+    summary.textContent = routeView.summary ?? '';
+
+    const list = document.createElement('ol');
+    list.className = 'route-stop-list';
+    (routeView.stopLines ?? []).forEach((line) => {
+      const item = document.createElement('li');
+      item.textContent = line;
+      list.appendChild(item);
+    });
+
+    panel.append(header, routeText, summary, list);
+    createIcons({ icons: { MapPinned } });
+  }
+
   function showUpgradePanel(upgrades = [], onSelect = () => {}) {
     const panel = shell.querySelector('#upgrade-panel');
     const list = panel.querySelector('.upgrade-list');
@@ -468,6 +614,9 @@ export function renderShell(root, state, content) {
     updateWeapon,
     updateNarrator,
     updateCultureCards,
+    updateCompletionCard,
+    updateRoute,
+    resetRewardPanels,
     showUpgradePanel,
     hideUpgradePanel,
     setPauseState,

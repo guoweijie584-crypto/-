@@ -42,6 +42,9 @@ describe('createAppState culture unlocks', () => {
     const state = createAppState();
     const summary = {
       selectedWeapon: 'sword',
+      kills: 52,
+      remainingHp: 86,
+      completionTime: 213.2,
       stages: [{ id: 'old-street', complete: true }]
     };
 
@@ -51,8 +54,19 @@ describe('createAppState culture unlocks', () => {
       completion: {
         title: '剑定山河',
         comment: '以剑清出线索',
+        selectedWeaponName: '剑',
+        kills: 52,
+        remainingHp: 86,
+        completionTime: 213.2,
+        clearedStageCount: 1,
+        totalStageCount: 5,
         summary,
         unlockedCards: [demoContent.cultureCards[0]]
+      },
+      routeView: {
+        routeText: '老街 -> 古井 -> 石桥 -> 园林 -> 城楼',
+        summary: '夜巡路线建议：老街 -> 古井 -> 石桥 -> 园林 -> 城楼。',
+        stopLines: ['老街：从老街入口进入。']
       },
       narratorText: '剑定山河归档。'
     });
@@ -60,6 +74,12 @@ describe('createAppState culture unlocks', () => {
     expect(state.getSnapshot().runSummary).toEqual(summary);
     expect(state.getSnapshot().completion.title).toBe('剑定山河');
     expect(state.getSnapshot().completion.comment).toContain('以剑');
+    expect(state.getSnapshot().completion.selectedWeaponName).toBe('剑');
+    expect(state.getSnapshot().completion.kills).toBe(52);
+    expect(state.getSnapshot().completion.remainingHp).toBe(86);
+    expect(state.getSnapshot().completion.completionTime).toBe(213.2);
+    expect(state.getSnapshot().completion.unlockedCards[0].title).toBe('老街灯影阵');
+    expect(state.getSnapshot().routeView.routeText).toBe('老街 -> 古井 -> 石桥 -> 园林 -> 城楼');
     expect(state.getSnapshot().narratorText).toBe('剑定山河归档。');
   });
 
@@ -72,6 +92,7 @@ describe('createAppState culture unlocks', () => {
     expect(state.getSnapshot().unlockedCards).toEqual([]);
     expect(state.getSnapshot().completion).toBeNull();
     expect(state.getSnapshot().runSummary).toBeNull();
+    expect(state.getSnapshot().routeView).toBeNull();
   });
 
   it('stores narrator updates as app state', () => {

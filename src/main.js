@@ -8,6 +8,7 @@ import {
   createCompletionNarration,
   createCultureUnlockNarration,
   createOnboardingNarration,
+  createRouteRecommendation,
   createStageNarration,
   createTravelTitle
 } from './narration/localNarrator.js';
@@ -51,6 +52,14 @@ function clearSavedRun() {
 
 const savedRun = readSavedRun();
 
+function getWeaponLabel(weaponId) {
+  return demoContent.weapons.find((item) => item.id === weaponId)?.name ?? demoContent.weapons[0].name;
+}
+
+function getClearedStageCount(summary = {}) {
+  return (summary.stages ?? []).filter((stage) => stage.complete).length;
+}
+
 function removeLegacyVictoryPanel() {
   document.querySelector('#victory-panel')?.remove();
 }
@@ -73,9 +82,16 @@ const game = mountGame(gameRoot, {
       const unlockedCards = demoContent.cultureCards.filter((card) => (
         (payload.stages ?? []).some((stage) => stage.id === card.spotId && stage.complete)
       ));
+      const routeView = createRouteRecommendation(demoContent.route, unlockedCards);
       const completion = {
         title: createTravelTitle(payload, demoContent),
         comment: createCompletionComment(payload, unlockedCards, demoContent),
+        selectedWeaponName: getWeaponLabel(payload.selectedWeapon),
+        kills: payload.kills ?? 0,
+        remainingHp: payload.remainingHp ?? 0,
+        completionTime: payload.completionTime ?? 0,
+        clearedStageCount: getClearedStageCount(payload),
+        totalStageCount: demoContent.route.length,
         summary: payload,
         unlockedCards
       };
@@ -84,6 +100,7 @@ const game = mountGame(gameRoot, {
         cultureCards: demoContent.cultureCards,
         unlockedCards,
         completion,
+        routeView,
         narratorText: createCompletionNarration(payload, unlockedCards, demoContent)
       });
       return;
@@ -125,6 +142,7 @@ shell.resetButton.addEventListener('click', () => {
   hasSavedRun = false;
   shell.setStartLabel('开始夜巡');
   appState.emit('game:reset');
+  shell.resetRewardPanels();
   game.reset();
 });
 
@@ -195,6 +213,8 @@ appState.subscribe((eventName, payload, snapshot) => {
     shell.setStartLabel('再战一次');
     shell.updateNarrator(snapshot.narratorText);
     shell.updateCultureCards(snapshot.unlockedCards, snapshot.unlockedCards.at(-1));
+    shell.updateCompletionCard(snapshot.completion);
+    shell.updateRoute(snapshot.routeView);
     removeLegacyVictoryPanel();
   }
 });

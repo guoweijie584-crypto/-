@@ -7,6 +7,7 @@ const DEFAULT_STATE = {
   unlockedCards: [],
   completion: null,
   runSummary: null,
+  routeView: null,
   route: []
 };
 
@@ -83,6 +84,7 @@ export function createAppState(initial = {}) {
         unlockedCards: [],
         completion: null,
         runSummary: null,
+        routeView: null,
         narratorText: initial.narratorText ?? ''
       };
     }
@@ -112,6 +114,7 @@ export function createAppState(initial = {}) {
         status: 'victory',
         completion: payload.completion ?? payload,
         runSummary: rawSummary,
+        routeView: payload.routeView ?? state.routeView,
         unlockedCards,
         narratorText: payload.narratorText ?? state.narratorText
       };
