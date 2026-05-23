@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-last_updated: "2026-05-23T07:41:03.602Z"
-last_activity: "2026-05-23 — Planned Phase 2 into three execution waves: weapons/upgrades, stage objectives/enemies, boss/victory summary."
+status: executing
+last_updated: "2026-05-23T08:28:58.222Z"
+last_activity: "2026-05-23 — Completed Phase 2: weapon selection/upgrades, three scenic stages, stage enemies, two-phase Boss, victory panel, and run summary."
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
-  completed_plans: 3
-  percent: 25
+  completed_plans: 6
+  percent: 50
 ---
 
 # Project State
@@ -20,22 +20,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-23)
 
 **Core value:** 用一段 3-5 分钟可扫码即玩的动作闯关体验，把真实景区文化转化成玩家愿意完成、分享并线下跟走的江湖副本。
-**Current focus:** Phase 2: Three-Stage Combat Loop
+**Current focus:** Phase 3: Culture, Narration, And Route Reward
 
 ## Current Position
 
-Phase: 2 of 4 (Three-Stage Combat Loop)
+Phase: 3 of 4 (Culture, Narration, And Route Reward)
 Plan: 0 of 3 in current phase
-Status: Planned; ready to execute
-Last activity: 2026-05-23 — Planned Phase 2 into three execution waves: weapons/upgrades, stage objectives/enemies, boss/victory summary.
+Status: Ready to plan
+Last activity: 2026-05-23 — Completed Phase 2: weapon selection/upgrades, three scenic stages, stage enemies, two-phase Boss, victory panel, and run summary.
 
-Progress: [██░░░░░░░░] 25%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 3
+- Total plans completed: 6
 - Average duration: N/A
 - Total execution time: 0.0 hours
 
@@ -44,14 +44,14 @@ Progress: [██░░░░░░░░] 25%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1. App Skeleton And Demo Migration | 3/3 | N/A | N/A |
-| 2. Three-Stage Combat Loop | 0/3 | 0.0h | N/A |
+| 2. Three-Stage Combat Loop | 3/3 | N/A | N/A |
 | 3. Culture, Narration, And Route Reward | 0/3 | 0.0h | N/A |
 | 4. Mobile PWA And Demo Hardening | 0/2 | 0.0h | N/A |
 
 **Recent Trend:**
 
-- Last 5 plans: 01-01, 01-02, 01-03
-- Trend: Phase 1 completed in one execution pass
+- Last 5 plans: 01-02, 01-03, 02-01, 02-02, 02-03
+- Trend: Phase 1 and Phase 2 completed in sequential execution passes
 
 *Updated after each plan completion*
 
@@ -70,10 +70,12 @@ Recent decisions affecting current work:
 - Phase 1 execution: `mountGame(container, options)` is the public game entry point; shell and game communicate through app-state events.
 - Phase 1 execution: Vite/Vitest are pinned to the Vite 4 generation because the local macOS/Node environment rejected the Rollup 4 native package signature.
 - Phase 2 planning: execute in three waves: 02-01 weapons/upgrades, 02-02 stage objectives/enemies, 02-03 boss/victory/run summary.
+- Phase 2 execution: `mountGame()` now exposes weapon selection, stage snapshots, Boss snapshots, and `runSummary` for Phase 3.
+- Phase 2 execution: victory emits `game:completed` with selected weapon, kills, remaining HP, completion time, victory flag, stages, echo fragments, boss phase, selected upgrades, and damage taken.
 
 ### Pending Todos
 
-- Run `$gsd-execute-phase 2` to implement the three Phase 2 plans.
+- Run `$gsd-plan-phase 3` to plan culture cards, local narrator fallback, travel card, and route reward.
 
 ### Blockers/Concerns
 
@@ -90,6 +92,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-05-23T07:41:03.596Z
-Stopped at: Phase 2 planned
-Resume file: .planning/phases/SHPL-02-three-stage-combat-loop/02-01-PLAN.md
+Last session: 2026-05-23T08:28:58.217Z
+Stopped at: Phase 2 complete; ready for Phase 3 planning
+Resume file: .planning/phases/SHPL-02-three-stage-combat-loop/02-03-SUMMARY.md

@@ -11,7 +11,7 @@ The v1 roadmap turns the existing single-file Canvas action demo into a structur
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 - [x] **Phase 1: App Skeleton And Demo Migration** - Create the Vite + Canvas H5 shell and preserve the existing playable combat loop.
-- [ ] **Phase 2: Three-Stage Combat Loop** - Add weapon selection, scenic stages, enemies, boss, and a win state.
+- [x] **Phase 2: Three-Stage Combat Loop** - Add weapon selection, scenic stages, enemies, boss, and a win state.
 - [ ] **Phase 3: Culture, Narration, And Route Reward** - Add culture cards, local AI fallback narration, completion card, and route recommendation.
 - [ ] **Phase 4: Mobile PWA And Demo Hardening** - Make the full loop phone-friendly, share-ready, and PWA-presentable.
 
@@ -59,9 +59,9 @@ Cross-cutting constraints:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: Implement weapon selection and distinct sword/blade/spear combat behavior.
-- [ ] 02-02: Implement stage data, stage objectives, transitions, and enemy set mapping.
-- [ ] 02-03: Implement boss encounter, win condition, and run summary metrics.
+- [x] 02-01: Implement weapon selection and distinct sword/blade/spear combat behavior.
+- [x] 02-02: Implement stage data, stage objectives, transitions, and enemy set mapping.
+- [x] 02-03: Implement boss encounter, win condition, and run summary metrics.
 
 ### Phase 3: Culture, Narration, And Route Reward
 **Goal**: Deliver the文旅 loop: stage-clear culture cards, Jianghu narrator fallback, generated title/comment, final travel card, and route recommendation.
@@ -106,7 +106,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. App Skeleton And Demo Migration | 3/3 | Completed | 2026-05-23 |
-| 2. Three-Stage Combat Loop | 0/3 | Planned | - |
+| 2. Three-Stage Combat Loop | 3/3 | Completed | 2026-05-23 |
 | 3. Culture, Narration, And Route Reward | 0/3 | Not started | - |
 | 4. Mobile PWA And Demo Hardening | 0/2 | Not started | - |
 
@@ -126,4 +126,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 ---
 *Roadmap created: 2026-05-23*
-*Last updated: 2026-05-23 after Phase 2 planning*
+*Last updated: 2026-05-23 after Phase 2 execution*
