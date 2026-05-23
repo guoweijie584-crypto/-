@@ -1,7 +1,8 @@
 import { distance, spawnParticles, spawnText } from './effects.js';
-import { MAP_SIZE, UPGRADES, createInitialGameState, createTerrain } from './gameState.js';
+import { MAP_SIZE, createInitialGameState, createTerrain } from './gameState.js';
 import { createInputController } from './input.js';
 import { render } from './rendering.js';
+import { getWeaponDefinition, getWeaponUpgrades } from './weapons.js';
 
 export function mountGame(container, options = {}) {
   if (!container) {
@@ -15,8 +16,8 @@ export function mountGame(container, options = {}) {
   container.appendChild(canvas);
 
   const ctx = canvas.getContext('2d');
-  const state = createInitialGameState();
   const emit = options.emit ?? (() => {});
+  const state = createInitialGameState({ selectedWeapon: options.selectedWeapon });
   let animationFrame = 0;
   let running = false;
   let input;
@@ -45,6 +46,19 @@ export function mountGame(container, options = {}) {
         maxEnergy: state.player.maxEnergy,
         hasWeapon: state.player.hasWeapon
       },
+      selectedWeapon: state.selectedWeapon,
+      weapon: {
+        id: state.weapon.id,
+        name: state.weapon.name,
+        trait: state.weapon.trait,
+        attack: state.weapon.attack
+      },
+      pendingUpgrades: state.pendingUpgrades.map(({ id, title, desc }) => ({ id, title, desc })),
+      runStats: {
+        selectedWeapon: state.runStats.selectedWeapon,
+        selectedUpgrades: state.runStats.selectedUpgrades,
+        damageTaken: state.runStats.damageTaken
+      },
       kills: state.kills,
       gameTime: state.gameTime
     };
@@ -55,11 +69,20 @@ export function mountGame(container, options = {}) {
   }
 
   function reset() {
-    Object.assign(state, createInitialGameState());
+    Object.assign(state, createInitialGameState({ selectedWeapon: state.selectedWeapon }));
     resizeCanvas();
     centerCameraOnPlayer();
     updateUI();
     render(ctx, canvas, state, input);
+  }
+
+  function setWeapon(weaponId) {
+    if (state.gameTime > 0 || state.gameState !== 'playing') return;
+    const weapon = getWeaponDefinition(weaponId);
+    state.selectedWeapon = weapon.id;
+    state.weapon = weapon;
+    state.runStats.selectedWeapon = weapon.id;
+    updateUI();
   }
 
   function triggerUltimate() {
@@ -164,42 +187,57 @@ export function mountGame(container, options = {}) {
   function performAttack() {
     const { player, enemies, projectiles } = state;
     const { mouse } = input;
-    player.attackTimer = player.attackCooldown;
+    const weapon = player.hasWeapon ? state.weapon : {
+      attack: { cooldown: 24, range: 45, arc: Math.PI * 0.7, damage: 10, knockback: 6, style: 'unarmed' },
+      visual: { color: '#f4efe0' }
+    };
+    const attack = weapon.attack;
+    player.attackTimer = Math.max(8, attack.cooldown - player.attackCooldownBonus);
     player.isSwingAnimating = true;
     player.swingTimer = 10;
 
     const aimAngle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
-    player.swingStart = aimAngle - Math.PI * 0.6;
-    player.swingEnd = aimAngle + Math.PI * 0.6;
+    player.swingStart = aimAngle - attack.arc / 2;
+    player.swingEnd = aimAngle + attack.arc / 2;
+    player.swingWidth = weapon.visual?.swingWidth ?? 8;
+    player.swingColor = weapon.visual?.color ?? `hsl(${player.colorHue}, 100%, 60%)`;
 
-    const baseDamage = player.hasWeapon ? 35 : 10;
-    const attackRange = player.hasWeapon ? 85 : 45;
-    const realDamage = baseDamage * player.damageMult;
-    const realRange = attackRange * player.rangeMult;
-    const swingColor = `hsl(${player.colorHue}, 100%, 60%)`;
+    const realDamage = attack.damage * player.damageMult;
+    const realRange = attack.range * player.rangeMult;
+    const swingColor = player.swingColor;
+    const dashDistance = attack.style === 'thrust-dash' ? attack.dash * (1 + player.spearDashBoost) : 0;
+
+    if (dashDistance > 0) {
+      player.x += Math.cos(aimAngle) * dashDistance;
+      player.y += Math.sin(aimAngle) * dashDistance;
+      player.x = Math.max(-MAP_SIZE / 2, Math.min(MAP_SIZE / 2, player.x));
+      player.y = Math.max(-MAP_SIZE / 2, Math.min(MAP_SIZE / 2, player.y));
+      spawnParticles(state, player.x, player.y, '#54C6B2', 10, 5, 0.04);
+    }
 
     enemies.slice().forEach((enemy) => {
       if (distance(player.x, player.y, enemy.x, enemy.y) <= realRange + enemy.radius) {
         let angleDiff = Math.atan2(enemy.y - player.y, enemy.x - player.x) - aimAngle;
         while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
         while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-        if (Math.abs(angleDiff) <= Math.PI * 0.5) {
+        if (Math.abs(angleDiff) <= attack.arc / 2) {
           damageEnemy(enemy, realDamage, false, swingColor);
-          enemy.x += Math.cos(aimAngle) * 10;
-          enemy.y += Math.sin(aimAngle) * 10;
+          const knockback = attack.knockback * player.knockbackMult;
+          enemy.x += Math.cos(aimAngle) * knockback;
+          enemy.y += Math.sin(aimAngle) * knockback;
         }
       }
     });
 
-    if (player.hasWeapon && player.hasSwordWave) {
+    if (player.hasWeapon && (attack.wave || player.hasSwordWave)) {
       projectiles.push({
         type: 'wave',
         x: player.x,
         y: player.y,
-        vx: Math.cos(aimAngle) * 10,
-        vy: Math.sin(aimAngle) * 10,
-        radius: 35 * player.rangeMult,
-        damage: realDamage * 0.8,
+        vx: Math.cos(aimAngle) * 11,
+        vy: Math.sin(aimAngle) * 11,
+        radius: (30 + player.swordWaveBoost * 18) * player.rangeMult,
+        damage: realDamage * (0.55 + player.swordWaveBoost),
         duration: 50,
         hitEnemies: new Set(),
         color: swingColor
@@ -216,7 +254,7 @@ export function mountGame(container, options = {}) {
     if (enemy.hp <= 0) {
       state.kills += 1;
       player.exp += enemy.expValue;
-      player.energy = Math.min(player.maxEnergy, player.energy + (enemy.type === 'neutral_animal' ? 2 : 5));
+      player.energy = Math.min(player.maxEnergy, player.energy + (enemy.type === 'neutral_animal' ? 2 : 5) * player.energyGainMult);
       spawnParticles(state, enemy.x, enemy.y, '#C9493D', 15, 6);
 
       if (player.vampRate > 0 && Math.random() < player.vampRate) {
@@ -242,17 +280,31 @@ export function mountGame(container, options = {}) {
   }
 
   function showUpgradeScreen() {
-    const { player } = state;
-    const upgrade = UPGRADES[Math.floor(Math.random() * UPGRADES.length)];
-    spawnText(state, player.x, player.y - 55, `升级：${upgrade.title}`, '#D7A84B', 20);
-    upgrade.apply(player);
+    state.pendingUpgrades = getWeaponUpgrades(state.selectedWeapon);
+    emit('game:upgrade-available', {
+      weaponId: state.selectedWeapon,
+      upgrades: state.pendingUpgrades.map(({ id, title, desc }) => ({ id, title, desc }))
+    });
+    updateUI();
+  }
+
+  function selectUpgrade(upgradeId) {
+    if (state.gameState !== 'upgrade') return;
+    const upgrade = state.pendingUpgrades.find((item) => item.id === upgradeId);
+    if (!upgrade) return;
+    upgrade.apply(state.player);
+    state.runStats.selectedUpgrades.push({ id: upgrade.id, title: upgrade.title });
+    spawnText(state, state.player.x, state.player.y - 55, `功法：${upgrade.title}`, '#D7A84B', 20);
+    state.pendingUpgrades = [];
     state.gameState = 'playing';
+    emit('game:upgrade-selected', { upgradeId: upgrade.id, title: upgrade.title });
     updateUI();
   }
 
   function hurtPlayer(dmg) {
     const { player } = state;
     player.hp -= dmg;
+    state.runStats.damageTaken += dmg;
     state.screenShake = 15;
     spawnText(state, player.x, player.y - 20, `-${Math.floor(dmg)}`, '#C9493D', 20);
     updateUI();
@@ -469,6 +521,8 @@ export function mountGame(container, options = {}) {
       input.destroy();
     },
     reset,
+    setWeapon,
+    selectUpgrade,
     getSnapshot,
     _debug: { state, canvas }
   };

@@ -1,3 +1,5 @@
+import { getWeaponDefinition } from './weapons.js';
+
 export const MAP_SIZE = 4000;
 
 export const UPGRADES = [
@@ -10,9 +12,12 @@ export const UPGRADES = [
   { title: '爆裂投掷', desc: '投掷武器落地时引发大范围爆炸', apply: (player) => { player.explosiveThrow = true; } }
 ];
 
-export function createInitialGameState() {
+export function createInitialGameState(initial = {}) {
+  const selectedWeapon = getWeaponDefinition(initial.selectedWeapon).id;
   return {
     gameState: 'playing',
+    selectedWeapon,
+    weapon: getWeaponDefinition(selectedWeapon),
     kills: 0,
     gameTime: 0,
     spawnTimer: 0,
@@ -20,6 +25,12 @@ export function createInitialGameState() {
     camera: { x: 0, y: 0 },
     terrain: { decorations: createTerrain() },
     player: createPlayer(),
+    pendingUpgrades: [],
+    runStats: {
+      selectedWeapon,
+      selectedUpgrades: [],
+      damageTaken: 0
+    },
     enemies: [],
     droppedWeapons: [],
     projectiles: [],
@@ -47,12 +58,17 @@ export function createPlayer() {
     rangeMult: 1,
     attackTimer: 0,
     attackCooldown: 20,
+    attackCooldownBonus: 0,
     isSwingAnimating: false,
     swingStart: 0,
     swingEnd: 0,
     swingTimer: 0,
     colorHue: 0,
     hasSwordWave: false,
+    swordWaveBoost: 0,
+    spearDashBoost: 0,
+    knockbackMult: 1,
+    energyGainMult: 1,
     explosiveThrow: false,
     vampRate: 0
   };

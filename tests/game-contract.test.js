@@ -48,13 +48,34 @@ describe('mountGame', () => {
     expect(game.start).toBeTypeOf('function');
     expect(game.stop).toBeTypeOf('function');
     expect(game.reset).toBeTypeOf('function');
+    expect(game.setWeapon).toBeTypeOf('function');
+    expect(game.selectUpgrade).toBeTypeOf('function');
     expect(game.getSnapshot).toBeTypeOf('function');
 
     const snapshot = game.getSnapshot();
     expect(snapshot).toHaveProperty('status');
     expect(snapshot).toHaveProperty('player');
+    expect(snapshot).toHaveProperty('selectedWeapon', 'sword');
+    expect(snapshot).toHaveProperty('weapon');
+    expect(snapshot.weapon.attack.style).toBe('sword-wave');
+    expect(snapshot.runStats.selectedUpgrades).toEqual([]);
     expect(snapshot).toHaveProperty('kills');
 
     expect(() => game.stop()).not.toThrow();
+  });
+
+  it('accepts an initial weapon and can update the weapon before play starts', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+
+    const game = mountGame(container, { selectedWeapon: 'blade' });
+    expect(game.getSnapshot().selectedWeapon).toBe('blade');
+    expect(game.getSnapshot().weapon.attack.style).toBe('broad-slash');
+
+    game.setWeapon('spear');
+    expect(game.getSnapshot().selectedWeapon).toBe('spear');
+    expect(game.getSnapshot().weapon.attack.style).toBe('thrust-dash');
+
+    game.stop();
   });
 });

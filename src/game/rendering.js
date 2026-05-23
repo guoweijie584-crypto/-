@@ -143,9 +143,9 @@ export function drawPlayer(ctx, state, input) {
     ctx.save();
     ctx.translate(player.x, player.y);
     ctx.shadowBlur = 20;
-    ctx.shadowColor = `hsl(${player.colorHue}, 100%, 50%)`;
-    ctx.strokeStyle = `hsla(${player.colorHue}, 100%, 70%, 0.82)`;
-    ctx.lineWidth = player.hasWeapon ? 12 : 5;
+    ctx.shadowColor = player.swingColor ?? `hsl(${player.colorHue}, 100%, 50%)`;
+    ctx.strokeStyle = player.swingColor ?? `hsla(${player.colorHue}, 100%, 70%, 0.82)`;
+    ctx.lineWidth = player.hasWeapon ? player.swingWidth ?? 12 : 5;
     ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.arc(0, 0, (player.hasWeapon ? 65 : 40) * player.rangeMult, player.swingStart, player.swingEnd);

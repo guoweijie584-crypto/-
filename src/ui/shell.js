@@ -55,6 +55,14 @@ export function renderShell(root, state, content) {
         <div class="weapon-list"></div>
       </aside>
 
+      <aside id="upgrade-panel" class="panel upgrade-panel is-hidden" data-panel="upgrade" aria-label="选择功法">
+        <div class="panel-title">
+          <i data-lucide="sparkles"></i>
+          <h2>选择功法</h2>
+        </div>
+        <div class="upgrade-list"></div>
+      </aside>
+
       <aside id="narrator-panel" class="panel narrator-panel" aria-label="AI 说书人">
         <div class="panel-title">
           <i data-lucide="scroll-text"></i>
@@ -134,11 +142,37 @@ export function renderShell(root, state, content) {
     });
   }
 
+  function showUpgradePanel(upgrades = [], onSelect = () => {}) {
+    const panel = shell.querySelector('#upgrade-panel');
+    const list = panel.querySelector('.upgrade-list');
+    list.innerHTML = '';
+    upgrades.forEach((upgrade) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'upgrade-choice';
+      button.dataset.upgrade = upgrade.id;
+      const title = document.createElement('strong');
+      title.textContent = upgrade.title;
+      const desc = document.createElement('span');
+      desc.textContent = upgrade.desc;
+      button.append(title, desc);
+      button.addEventListener('click', () => onSelect(upgrade.id));
+      list.appendChild(button);
+    });
+    panel.classList.remove('is-hidden');
+  }
+
+  function hideUpgradePanel() {
+    shell.querySelector('#upgrade-panel').classList.add('is-hidden');
+  }
+
   return {
     root: shell,
     startButton: shell.querySelector('[data-action="start"]'),
     resetButton: shell.querySelector('[data-action="reset"]'),
     updateHud,
-    updateWeapon
+    updateWeapon,
+    showUpgradePanel,
+    hideUpgradePanel
   };
 }

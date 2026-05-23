@@ -4,13 +4,13 @@ export const demoContent = {
     {
       id: 'sword',
       name: '剑',
-      trait: '灵活，有剑气',
+      trait: '灵活剑气',
       description: '剑走轻灵，适合快速破开灯影妖阵。'
     },
     {
       id: 'blade',
       name: '刀',
-      trait: '范围大，打击重',
+      trait: '横扫重击',
       description: '刀势沉猛，适合压制成群纸人怪。'
     },
     {

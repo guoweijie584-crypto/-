@@ -1,6 +1,8 @@
 const DEFAULT_STATE = {
   status: 'ready',
   selectedWeapon: 'sword',
+  selectedUpgrade: null,
+  pendingUpgrades: [],
   narratorText: '',
   unlockedCards: [],
   completion: null,
@@ -38,6 +40,14 @@ export function createAppState(initial = {}) {
   function emit(eventName, payload = {}) {
     if (eventName === 'weapon:selected') {
       state = { ...state, selectedWeapon: payload.weaponId };
+    }
+
+    if (eventName === 'game:upgrade-available') {
+      state = { ...state, pendingUpgrades: payload.upgrades ?? [] };
+    }
+
+    if (eventName === 'game:upgrade-selected') {
+      state = { ...state, selectedUpgrade: payload.upgradeId, pendingUpgrades: [] };
     }
 
     if (eventName === 'game:started') {

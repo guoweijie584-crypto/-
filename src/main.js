@@ -20,6 +20,7 @@ const shell = renderShell(root, appState, demoContent);
 const gameRoot = shell.root.querySelector('#game-root');
 
 const game = mountGame(gameRoot, {
+  selectedWeapon: appState.getSnapshot().selectedWeapon,
   emit: (eventName, payload) => appState.emit(eventName, payload)
 });
 
@@ -42,6 +43,17 @@ appState.subscribe((eventName, payload, snapshot) => {
 
   if (eventName === 'weapon:selected') {
     shell.updateWeapon(snapshot.selectedWeapon);
+    game.setWeapon(snapshot.selectedWeapon);
+  }
+
+  if (eventName === 'game:upgrade-available') {
+    shell.showUpgradePanel(payload.upgrades, (upgradeId) => {
+      game.selectUpgrade(upgradeId);
+    });
+  }
+
+  if (eventName === 'game:upgrade-selected') {
+    shell.hideUpgradePanel();
   }
 });
 
