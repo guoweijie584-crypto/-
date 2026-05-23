@@ -10,7 +10,7 @@ The v1 roadmap turns the existing single-file Canvas action demo into a structur
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 1: App Skeleton And Demo Migration** - Create the Vite + Canvas H5 shell and preserve the existing playable combat loop.
+- [x] **Phase 1: App Skeleton And Demo Migration** - Create the Vite + Canvas H5 shell and preserve the existing playable combat loop.
 - [ ] **Phase 2: Three-Stage Combat Loop** - Add weapon selection, scenic stages, enemies, boss, and a win state.
 - [ ] **Phase 3: Culture, Narration, And Route Reward** - Add culture cards, local AI fallback narration, completion card, and route recommendation.
 - [ ] **Phase 4: Mobile PWA And Demo Hardening** - Make the full loop phone-friendly, share-ready, and PWA-presentable.
@@ -32,13 +32,13 @@ The v1 roadmap turns the existing single-file Canvas action demo into a structur
 
 Plans:
 **Wave 1**
-- [ ] 01-01: Create Vite app shell, scripts, entry HTML, styles, and Canvas mount.
+- [x] 01-01: Create Vite app shell, scripts, entry HTML, styles, and Canvas mount.
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 01-02: Migrate existing combat loop into modular game code while preserving behavior.
+- [x] 01-02: Migrate existing combat loop into modular game code while preserving behavior.
 
 **Wave 3** *(blocked on Wave 1 and Wave 2 completion)*
-- [ ] 01-03: Add DOM UI shell/state wiring for upcoming weapon, narration, card, and route surfaces.
+- [x] 01-03: Add DOM UI shell/state wiring for upcoming weapon, narration, card, and route surfaces.
 
 Cross-cutting constraints:
 - Existing `gemini-code-1779459048019_副本.html` remains untouched as the reference demo.
@@ -105,7 +105,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. App Skeleton And Demo Migration | 0/3 | Planned | - |
+| 1. App Skeleton And Demo Migration | 3/3 | Completed | 2026-05-23 |
 | 2. Three-Stage Combat Loop | 0/3 | Not started | - |
 | 3. Culture, Narration, And Route Reward | 0/3 | Not started | - |
 | 4. Mobile PWA And Demo Hardening | 0/2 | Not started | - |
@@ -126,4 +126,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 ---
 *Roadmap created: 2026-05-23*
-*Last updated: 2026-05-23 after initial roadmap*
+*Last updated: 2026-05-23 after Phase 1 execution*
