@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>刀钝狗的奇幻破阵 - 动作生存游戏</title>
+    <style>
+        * { box-sizing: border-box; user-select: none; }
+        body {
+            margin: 0; padding: 0;
+            background-color: #2c3e50;
+            color: #ffffff;
+            font-family: 'Microsoft YaHei', sans-serif;
+            overflow: hidden;
+            width: 100vw; height: 100vh;
+        }
+        #game-container { position: relative; width: 100%; height: 100%; }
+        canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+        
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%;
+            padding: 20px; pointer-events: none;
+            display: flex; flex-direction: column; gap: 10px; z-index: 5;
+        }
+        .stats-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        
+        .bar-container {
+            width: 250px; height: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #444; border-radius: 10px;
+            overflow: hidden; position: relative;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            margin-bottom: 5px;
+        }
+        .bar-fill { height: 100%; width: 100%; transform-origin: left; transition: transform 0.1s; }
+        #hp-fill { background: linear-gradient(90deg, #ff3333, #ff6666); }
+        #exp-fill { background: linear-gradient(90deg, #33cc33, #66ff66); }
+        #energy-fill { background: linear-gradient(90deg, #9b59b6, #e056fd); transform: scaleX(0); }
+        
+        .bar-text {
+            position: absolute; width: 100%; height: 100%; top: 0; left: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: bold; text-shadow: 1px 1px 2px #000;
+        }
+        
+        #hud-center { font-size: 24px; font-weight: bold; color: #f1c40f; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
+        #hud-right { font-size: 16px; text-align: right; text-shadow: 1px 1px 2px #000; }
+        
+        #controls-hint {
+            font-size: 14px; color: #fff; background: rgba(0,0,0,0.5);
+            padding: 10px 15px; border-radius: 8px; border: 1px solid #7f8c8d;
+        }
+        .key-btn { color: #f1c40f; font-weight: bold; }
+        .ult-ready { animation: glow 1s infinite alternate; color: #e056fd !important; font-size: 16px; }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 5px #e056fd, 0 0 10px #e056fd; }
+            to { text-shadow: 0 0 10px #e056fd, 0 0 20px #e056fd; }
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(20, 25, 30, 0.95); border: 3px solid #f1c40f; border-radius: 16px;
+            padding: 30px; width: 90%; max-width: 450px; text-align: center;
+            box-shadow: 0 0 30px rgba(241, 196, 15, 0.3); z-index: 10; pointer-events: auto;
+        }
+        .modal h2 { margin-top: 0; color: #f1c40f; font-size: 28px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .upgrade-option {
+            background: #2c3e50; border: 1px solid #4f5d75; border-radius: 8px;
+            padding: 15px; margin: 15px 0; cursor: pointer; transition: all 0.2s; text-align: left;
+        }
+        .upgrade-option:hover { background: #34495e; border-color: #f1c40f; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .upgrade-title { font-weight: bold; font-size: 18px; color: #00ffff; margin-bottom: 5px; }
+        .upgrade-desc { font-size: 14px; color: #bdc3c7; }
+        
+        #restart-btn {
+            background: #e74c3c; color: white; border: none; padding: 12px 30px;
+            font-size: 18px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 20px;
+        }
+        #restart-btn:hover { background: #c0392b; }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="ui-layer">
+            <div class="stats-row">
+                <div>
+                    <div style="font-size: 14px; font-weight: bold; color: #ff6666;">生命值 (HP)</div>
+                    <div class="bar-container"><div id="hp-fill" class="bar-fill"></div><div id="hp-text" class="bar-text">100 / 100</div></div>
+                    <div style="font-size: 14px; font-weight: bold; color: #66ff66;">经验值 (EXP)</div>
+                    <div class="bar-container"><div id="exp-fill" class="bar-fill"></div><div id="exp-text" class="bar-text">0 / 100</div></div>
+                    <div style="font-size: 14px; font-weight: bold; color: #e056fd;">大招能量 (Energy)</div>
+                    <div class="bar-container" style="border-color: #8e44ad;"><div id="energy-fill" class="bar-fill"></div><div id="energy-text" class="bar-text">0 / 100</div></div>
+                </div>
+                <div id="hud-center">等级 <span id="ui-level">1</span></div>
+                <div id="hud-right">
+                    击杀数: <span id="ui-kills" style="color: #f39c12; font-weight: bold; font-size: 20px;">0</span><br>
+                </div>
+            </div>
+            <div class="stats-row">
+                <div id="controls-hint">
+                    操作: <span class="key-btn">[W A S D]</span> 移动 | <span class="key-btn">[左键]</span> 炫酷挥砍 | <span class="key-btn">[右键]</span> 投掷武器<br>
+                    <span id="ult-hint">终极技能: <span class="key-btn">[空格键 Space]</span> 瞬狱影杀阵 (满能量可用)</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="upgrade-modal" class="modal">
+            <h2>升级！选择能力</h2>
+            <div id="upgrade-options"></div>
+        </div>
+
+        <div id="gameover-modal" class="modal" style="border-color: #e74c3c; box-shadow: 0 0 30px rgba(231, 76, 60, 0.5);">
+            <h1 style="color: #e74c3c;">刀钝狗倒下了...</h1>
+            <p style="font-size: 16px; color: #bdc3c7;">最终击杀: <span id="go-kills" style="color: #fff; font-weight: bold;">0</span></p>
+            <button id="restart-btn" onclick="resetGame()">重新开始</button>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        window.addEventListener('contextmenu', e => e.preventDefault());
+
+        let gameState = 'playing'; 
+        let kills = 0;
+        let gameTime = 0;
+        let spawnTimer = 0;
+        let screenShake = 0;
+
+        const keys = {};
+        const mouse = { x: canvas.width/2, y: canvas.height/2, worldX: 0, worldY: 0, isLeftDown: false };
+
+        window.addEventListener('keydown', e => { 
+            keys[e.key.toLowerCase()] = true; 
+            if(e.key === ' ') triggerUltimate(); 
+        });
+        window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+        window.addEventListener('mousemove', e => {
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = e.clientX - rect.left;
+            mouse.y = e.clientY - rect.top;
+        });
+        window.addEventListener('mousedown', e => {
+            if (gameState !== 'playing') return;
+            if (e.button === 0) mouse.isLeftDown = true;
+            if (e.button === 2) throwWeapon();
+        });
+        window.addEventListener('mouseup', e => {
+            if (e.button === 0) mouse.isLeftDown = false;
+        });
+
+        function resizeCanvas() { 
+            canvas.width = window.innerWidth; 
+            canvas.height = window.innerHeight; 
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const camera = { x: 0, y: 0 };
+
+        // 地形与环境生成 (草和花)
+        const MAP_SIZE = 4000;
+        const terrain = { decorations: [] };
+        
+        function initTerrain() {
+            terrain.decorations = [];
+            for(let i=0; i<2000; i++) {
+                terrain.decorations.push({
+                    x: (Math.random() - 0.5) * MAP_SIZE,
+                    y: (Math.random() - 0.5) * MAP_SIZE,
+                    type: Math.random() > 0.3 ? 'grass' : 'flower',
+                    color: Math.random() > 0.5 ? '#e74c3c' : '#f1c40f'
+                });
+            }
+        }
+        initTerrain();
+
+        // 刀钝狗 (玩家)
+        const player = {
+            x: 0, y: 0, radius: 22, speed: 4.5, hp: 100, maxHp: 100, level: 1, exp: 0, maxExp: 100,
+            energy: 0, maxEnergy: 100,
+            hasWeapon: true, weaponLevel: 1, damageMult: 1, rangeMult: 1,
+            attackTimer: 0, attackCooldown: 20, isSwingAnimating: false, swingStart: 0, swingEnd: 0, swingTimer: 0,
+            colorHue: 0, 
+            hasSwordWave: false, explosiveThrow: false, vampRate: 0
+        };
+
+        let enemies = [], droppedWeapons = [], projectiles = [], particles = [], damageTexts = [];
+
+        const UPGRADES = [
+            { title: '无锋之刃', desc: '全伤害提升 30%', effect: () => { player.damageMult *= 1.3; } },
+            { title: '极意斩击', desc: '攻击范围增加 25%', effect: () => { player.rangeMult *= 1.25; } },
+            { title: '雷霆步伐', desc: '移动速度提升 15%', effect: () => { player.speed *= 1.15; } },
+            { title: '气血充盈', desc: '最大生命值 +50，并回满血', effect: () => { player.maxHp += 50; player.hp = player.maxHp; } },
+            { title: '炫彩剑波', desc: '挥砍附加一道穿透的彩色剑气', effect: () => { player.hasSwordWave = true; } },
+            { title: '嗜血本能', desc: '击杀敌人时有 20% 几率回血', effect: () => { player.vampRate += 0.2; } },
+            { title: '爆裂投掷', desc: '投掷武器落地时引发大范围爆炸', effect: () => { player.explosiveThrow = true; } }
+        ];
+
+        function resetGame() {
+            kills = 0; gameTime = 0; spawnTimer = 0; screenShake = 0;
+            player.x = 0; player.y = 0; player.hp = 100; player.maxHp = 100; player.level = 1; player.exp = 0; player.maxExp = 100;
+            player.energy = 0; player.hasWeapon = true; player.damageMult = 1; player.rangeMult = 1; player.speed = 4.5;
+            player.hasSwordWave = false; player.explosiveThrow = false; player.vampRate = 0;
+            enemies = []; droppedWeapons = []; projectiles = []; particles = []; damageTexts = [];
+            initTerrain();
+            document.getElementById('gameover-modal').style.display = 'none';
+            document.getElementById('upgrade-modal').style.display = 'none';
+            gameState = 'playing'; updateUI();
+        }
+
+        function distance(x1, y1, x2, y2) { return Math.sqrt((x2-x1)**2 + (y2-y1)**2); }
+
+        function spawnText(x, y, text, color = '#fff', size = 16) {
+            damageTexts.push({ x, y, text, color, alpha: 1, vy: -2, age: 0, size });
+        }
+
+        function spawnParticles(x, y, color, count, speed, life = 0.02) {
+            for(let i=0; i<count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const spd = Math.random() * speed;
+                particles.push({
+                    x, y, vx: Math.cos(angle)*spd, vy: Math.sin(angle)*spd,
+                    radius: 2 + Math.random()*4, color, alpha: 1, decay: life
+                });
+            }
+        }
+
+        // 酷炫大招
+        function triggerUltimate() {
+            if(player.energy < player.maxEnergy || gameState !== 'playing') return;
+            player.energy = 0;
+            screenShake = 25;
+            
+            const startX = player.x; const startY = player.y;
+            const targetX = mouse.worldX; const targetY = mouse.worldY;
+            
+            player.x = targetX; player.y = targetY;
+            
+            projectiles.push({ type: 'ult_line', x1: startX, y1: startY, x2: player.x, y2: player.y, duration: 20 });
+            spawnParticles(startX, startY, '#e056fd', 30, 8, 0.01);
+            spawnParticles(player.x, player.y, '#00ffff', 40, 10, 0.01);
+            spawnText(player.x, player.y - 40, "瞬狱影杀阵！", "#e056fd", 24);
+
+            const ultRadius = 250;
+            enemies.forEach(enemy => {
+                if(distance(player.x, player.y, enemy.x, enemy.y) < ultRadius + enemy.radius) {
+                    damageEnemy(enemy, 500 * player.damageMult, true, '#e056fd');
+                    projectiles.push({ type: 'ult_chain', x1: player.x, y1: player.y, x2: enemy.x, y2: enemy.y, duration: 10 });
+                }
+            });
+            updateUI();
+        }
+
+        function throwWeapon() {
+            if (!player.hasWeapon || gameState !== 'playing') return;
+            const angle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
+            droppedWeapons.push({
+                x: player.x, y: player.y, vx: Math.cos(angle)*16, vy: Math.sin(angle)*16,
+                radius: 18, isFlying: true, baseDamage: 60 * player.damageMult,
+                hitEnemies: new Set(), friction: 0.96
+            });
+            player.hasWeapon = false;
+            screenShake = 6;
+        }
+
+        function spawnEnemy() {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = Math.max(canvas.width, canvas.height) / 2 + 150;
+            const x = player.x + Math.cos(angle) * dist;
+            const y = player.y + Math.sin(angle) * dist;
+
+            const rand = Math.random();
+            let enemyType, hp, speed, expValue, behavior;
+            
+            if (rand < 0.35) {
+                enemyType = 'neutral_animal'; hp = 20; speed = 2.8; expValue = 5; behavior = 'flee';
+            } else if (rand < 0.7) {
+                enemyType = 'silly_dog'; hp = 30 + gameTime*0.5; speed = 3.2; expValue = 15; behavior = 'chase';
+            } else {
+                enemyType = 'fierce_monster'; hp = 150 + gameTime*3; speed = 1.3; expValue = 40; behavior = 'chase';
+            }
+            
+            let radius = 15 + Math.sqrt(hp) * 1.5;
+            if(radius > 60) radius = 60; 
+
+            enemies.push({ 
+                x, y, type: enemyType, hp, maxHp: hp, speed, radius, expValue, 
+                hitCooldown: 0, behavior, 
+                targetAngle: Math.random() * Math.PI * 2,
+                seed: Math.random() 
+            });
+        }
+
+        function performAttack() {
+            player.attackTimer = player.attackCooldown;
+            player.isSwingAnimating = true;
+            player.swingTimer = 10;
+            
+            const aimAngle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
+            player.swingStart = aimAngle - Math.PI * 0.6;
+            player.swingEnd = aimAngle + Math.PI * 0.6;
+
+            const baseDamage = player.hasWeapon ? 35 : 10;
+            const attackRange = player.hasWeapon ? 85 : 45;
+            const realDamage = baseDamage * player.damageMult;
+            const realRange = attackRange * player.rangeMult;
+
+            const swingColor = `hsl(${player.colorHue}, 100%, 60%)`;
+
+            enemies.forEach(enemy => {
+                if (distance(player.x, player.y, enemy.x, enemy.y) <= realRange + enemy.radius) {
+                    let angleDiff = Math.atan2(enemy.y - player.y, enemy.x - player.x) - aimAngle;
+                    while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                    if (Math.abs(angleDiff) <= Math.PI * 0.5) {
+                        damageEnemy(enemy, realDamage, false, swingColor);
+                        enemy.x += Math.cos(aimAngle)*10; enemy.y += Math.sin(aimAngle)*10;
+                    }
+                }
+            });
+
+            if (player.hasWeapon && player.hasSwordWave) {
+                projectiles.push({
+                    type: 'wave', x: player.x, y: player.y,
+                    vx: Math.cos(aimAngle)*10, vy: Math.sin(aimAngle)*10,
+                    radius: 35 * player.rangeMult, damage: realDamage * 0.8,
+                    duration: 50, hitEnemies: new Set(), color: swingColor
+                });
+            }
+        }
+
+        function damageEnemy(enemy, dmg, isCrit = false, vfxColor = '#fff') {
+            enemy.hp -= dmg;
+            spawnText(enemy.x, enemy.y - enemy.radius, Math.floor(dmg), isCrit ? '#e056fd' : '#f1c40f', isCrit? 22:16);
+            spawnParticles(enemy.x, enemy.y, vfxColor, 6, 4);
+
+            if (enemy.hp <= 0) {
+                kills++;
+                player.exp += enemy.expValue;
+                let nrg = enemy.type === 'neutral_animal' ? 2 : 5;
+                player.energy = Math.min(player.maxEnergy, player.energy + nrg);
+                
+                spawnParticles(enemy.x, enemy.y, '#e74c3c', 15, 6);
+                
+                if (player.vampRate > 0 && Math.random() < player.vampRate) {
+                    player.hp = Math.min(player.maxHp, player.hp + 5);
+                    spawnText(player.x, player.y - 20, "+5", "#2ecc71");
+                }
+                enemies = enemies.filter(e => e !== enemy);
+                checkLevelUp();
+                updateUI();
+            }
+        }
+
+        function checkLevelUp() {
+            if (player.exp >= player.maxExp) {
+                player.exp -= player.maxExp;
+                player.level++;
+                player.maxExp = Math.floor(player.maxExp * 1.4 + 50);
+                gameState = 'upgrade';
+                showUpgradeScreen();
+            }
+        }
+
+        function showUpgradeScreen() {
+            const modal = document.getElementById('upgrade-modal');
+            const container = document.getElementById('upgrade-options');
+            container.innerHTML = '';
+            const selections = [...UPGRADES].sort(() => 0.5 - Math.random()).slice(0, 3);
+            selections.forEach(upg => {
+                const opt = document.createElement('div');
+                opt.className = 'upgrade-option';
+                opt.innerHTML = `<div class="upgrade-title">${upg.title}</div><div class="upgrade-desc">${upg.desc}</div>`;
+                opt.onclick = () => {
+                    upg.effect(); modal.style.display = 'none'; gameState = 'playing'; updateUI();
+                };
+                container.appendChild(opt);
+            });
+            modal.style.display = 'block';
+        }
+
+        function updateUI() {
+            document.getElementById('hp-fill').style.transform = `scaleX(${Math.max(0, player.hp/player.maxHp)})`;
+            document.getElementById('hp-text').innerText = `${Math.floor(player.hp)} / ${player.maxHp}`;
+            document.getElementById('exp-fill').style.transform = `scaleX(${Math.max(0, player.exp/player.maxExp)})`;
+            document.getElementById('exp-text').innerText = `${player.exp} / ${player.maxExp}`;
+            document.getElementById('energy-fill').style.transform = `scaleX(${Math.max(0, player.energy/player.maxEnergy)})`;
+            document.getElementById('energy-text').innerText = `${player.energy} / ${player.maxEnergy}`;
+            
+            const hint = document.getElementById('ult-hint');
+            if(player.energy >= player.maxEnergy) hint.classList.add('ult-ready');
+            else hint.classList.remove('ult-ready');
+            
+            document.getElementById('ui-level').innerText = player.level;
+            document.getElementById('ui-kills').innerText = kills;
+        }
+
+        function hurtPlayer(dmg) {
+            player.hp -= dmg; screenShake = 15;
+            spawnText(player.x, player.y - 20, `-${Math.floor(dmg)}`, '#ff3333', 20);
+            updateUI();
+            if (player.hp <= 0) {
+                gameState = 'gameover';
+                document.getElementById('go-kills').innerText = kills;
+                document.getElementById('gameover-modal').style.display = 'block';
+            }
+        }
+
+        function update() {
+            if (gameState !== 'playing') return;
+            gameTime += 1/60;
+            player.colorHue = (player.colorHue + 5) % 360; 
+            if (screenShake > 0) screenShake *= 0.85;
+
+            mouse.worldX = mouse.x + camera.x;
+            mouse.worldY = mouse.y + camera.y;
+
+            // 恢复 WASD 控制移动
+            let mx = 0, my = 0;
+            if (keys['w'] || keys['arrowup']) my -= 1;
+            if (keys['s'] || keys['arrowdown']) my += 1;
+            if (keys['a'] || keys['arrowleft']) mx -= 1;
+            if (keys['d'] || keys['arrowright']) mx += 1;
+            
+            if (mx !== 0 || my !== 0) {
+                const len = Math.sqrt(mx*mx + my*my);
+                player.x += (mx/len) * player.speed;
+                player.y += (my/len) * player.speed;
+            }
+
+            player.x = Math.max(-MAP_SIZE/2, Math.min(MAP_SIZE/2, player.x));
+            player.y = Math.max(-MAP_SIZE/2, Math.min(MAP_SIZE/2, player.y));
+
+            if (player.attackTimer > 0) player.attackTimer--;
+            if (mouse.isLeftDown && player.attackTimer === 0) performAttack();
+            if (player.isSwingAnimating) {
+                player.swingTimer--;
+                if(player.swingTimer <= 0) player.isSwingAnimating = false;
+            }
+
+            spawnTimer++;
+            const maxInterval = Math.max(15, 80 - Math.floor(gameTime/5));
+            if (spawnTimer >= maxInterval) { spawnTimer = 0; spawnEnemy(); }
+
+            droppedWeapons.forEach(weap => {
+                if (weap.isFlying) {
+                    weap.x += weap.vx; weap.y += weap.vy;
+                    weap.vx *= weap.friction; weap.vy *= weap.friction;
+                    
+                    spawnParticles(weap.x, weap.y, '#00ffff', 1, 1, 0.05);
+                    
+                    enemies.forEach(enemy => {
+                        if (!weap.hitEnemies.has(enemy) && distance(weap.x, weap.y, enemy.x, enemy.y) < weap.radius + enemy.radius) {
+                            damageEnemy(enemy, weap.baseDamage * 1.5, true, '#00ffff');
+                            weap.hitEnemies.add(enemy);
+                            enemy.x += weap.vx*0.5; enemy.y += weap.vy*0.5; 
+                        }
+                    });
+                    if (Math.sqrt(weap.vx**2 + weap.vy**2) < 1) {
+                        weap.isFlying = false;
+                        if (player.explosiveThrow) {
+                            projectiles.push({ type: 'explosion', x: weap.x, y: weap.y, radius: 10, maxRadius: 150, damage: 80 * player.damageMult, duration: 20 });
+                            screenShake = 12;
+                        }
+                    }
+                } else {
+                    if (!player.hasWeapon && distance(player.x, player.y, weap.x, weap.y) < player.radius + weap.radius) {
+                        player.hasWeapon = true;
+                        spawnText(player.x, player.y - 30, "获得武器！", "#00ffff");
+                        droppedWeapons = droppedWeapons.filter(w => w !== weap);
+                    }
+                }
+            });
+
+            projectiles.forEach(proj => {
+                if (proj.type === 'explosion') {
+                    proj.radius += (proj.maxRadius - proj.radius) * 0.2;
+                    enemies.forEach(enemy => {
+                        if (distance(proj.x, proj.y, enemy.x, enemy.y) < proj.radius && !proj.hitEnemies) {
+                            damageEnemy(enemy, proj.damage);
+                        }
+                    });
+                    proj.hitEnemies = true;
+                    proj.duration--;
+                } else if(proj.type === 'wave') {
+                    proj.x += proj.vx; proj.y += proj.vy;
+                    spawnParticles(proj.x, proj.y, proj.color, 2, 2, 0.1);
+                    enemies.forEach(enemy => {
+                        if (!proj.hitEnemies.has(enemy) && distance(proj.x, proj.y, enemy.x, enemy.y) < proj.radius + enemy.radius) {
+                            damageEnemy(enemy, proj.damage, false, proj.color);
+                            proj.hitEnemies.add(enemy);
+                        }
+                    });
+                    proj.duration--;
+                } else if(proj.type === 'ult_line' || proj.type === 'ult_chain') {
+                    proj.duration--;
+                }
+            });
+            projectiles = projectiles.filter(p => p.duration > 0);
+
+            enemies.forEach(enemy => {
+                if (enemy.hitCooldown > 0) enemy.hitCooldown--;
+                
+                if (enemy.behavior === 'chase') {
+                    const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+                    enemy.x += Math.cos(angle) * enemy.speed;
+                    enemy.y += Math.sin(angle) * enemy.speed;
+                    
+                    if (distance(enemy.x, enemy.y, player.x, player.y) < enemy.radius + player.radius) {
+                        if (enemy.hitCooldown === 0) {
+                            hurtPlayer(enemy.type === 'fierce_monster' ? 25 : 12);
+                            enemy.hitCooldown = 45;
+                        }
+                    }
+                } else if (enemy.behavior === 'flee') {
+                    let d = distance(enemy.x, enemy.y, player.x, player.y);
+                    if (d < 300) {
+                        enemy.targetAngle = Math.atan2(enemy.y - player.y, enemy.x - player.x);
+                    } else if (Math.random() < 0.03) {
+                        enemy.targetAngle = Math.random() * Math.PI * 2;
+                    }
+                    enemy.x += Math.cos(enemy.targetAngle) * enemy.speed;
+                    enemy.y += Math.sin(enemy.targetAngle) * enemy.speed;
+                }
+            });
+
+            particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.alpha -= p.decay; });
+            particles = particles.filter(p => p.alpha > 0);
+
+            damageTexts.forEach(dt => { dt.y += dt.vy; dt.age++; dt.alpha = Math.max(0, 1 - dt.age/40); });
+            damageTexts = damageTexts.filter(dt => dt.alpha > 0);
+
+            camera.x += (player.x - canvas.width/2 - camera.x) * 0.1;
+            camera.y += (player.y - canvas.height/2 - camera.y) * 0.1;
+        }
+
+        function drawGrass(x, y) {
+            ctx.strokeStyle = '#27ae60'; ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x, y); ctx.lineTo(x-3, y-8);
+            ctx.moveTo(x, y); ctx.lineTo(x+2, y-10);
+            ctx.moveTo(x, y); ctx.lineTo(x+5, y-6);
+            ctx.stroke();
+        }
+
+        function drawFlower(x, y, color) {
+            ctx.fillStyle = color;
+            for(let i=0; i<4; i++) {
+                ctx.beginPath(); ctx.arc(x + Math.cos(i*Math.PI/2)*3, y + Math.sin(i*Math.PI/2)*3, 3, 0, Math.PI*2); ctx.fill();
+            }
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.arc(x, y, 2, 0, Math.PI*2); ctx.fill();
+        }
+
+        function drawPlayer() {
+            ctx.save();
+            // 修复隐形bug的关键：将绘制原点移动到玩家实际位置！
+            ctx.translate(player.x, player.y);
+
+            if(player.energy >= player.maxEnergy) {
+                ctx.shadowBlur = 20; ctx.shadowColor = '#e056fd';
+                ctx.strokeStyle = '#e056fd'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(0, 0, player.radius + Math.sin(gameTime*10)*5, 0, Math.PI*2); ctx.stroke();
+            }
+
+            ctx.fillStyle = '#f1c40f'; 
+            ctx.beginPath(); ctx.arc(0, 0, player.radius, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#d35400'; ctx.lineWidth = 2; ctx.stroke();
+            
+            ctx.fillStyle = '#e67e22';
+            ctx.beginPath(); ctx.ellipse(-12, -10, 6, 14, -Math.PI/6, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(12, -10, 6, 14, Math.PI/6, 0, Math.PI*2); ctx.fill();
+            
+            const aimAngle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
+            ctx.rotate(aimAngle);
+
+            ctx.fillStyle = '#111';
+            ctx.beginPath(); ctx.arc(6, -6, 3, 0, Math.PI*2); ctx.fill(); 
+            ctx.beginPath(); ctx.arc(6, 6, 3, 0, Math.PI*2); ctx.fill();  
+            ctx.beginPath(); ctx.arc(14, 0, 4, 0, Math.PI*2); ctx.fill(); 
+            
+            if (player.hasWeapon) {
+                ctx.shadowBlur = 15; ctx.shadowColor = `hsl(${player.colorHue}, 100%, 50%)`;
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+                ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(12 + 40 * player.rangeMult, 0); ctx.stroke();
+                
+                ctx.shadowBlur = 0;
+                ctx.strokeStyle = '#f1c40f'; ctx.lineWidth = 4;
+                ctx.beginPath(); ctx.moveTo(15, -8); ctx.lineTo(15, 8); ctx.stroke();
+            }
+            ctx.restore();
+            
+            if (player.isSwingAnimating) {
+                ctx.save();
+                ctx.translate(player.x, player.y);
+                ctx.shadowBlur = 20; ctx.shadowColor = `hsl(${player.colorHue}, 100%, 50%)`;
+                ctx.strokeStyle = `hsla(${player.colorHue}, 100%, 70%, 0.8)`;
+                ctx.lineWidth = player.hasWeapon ? 12 : 5; ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.arc(0, 0, (player.hasWeapon? 65 : 40)*player.rangeMult, player.swingStart, player.swingEnd);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        function drawEnemy(enemy) {
+            ctx.save();
+            ctx.translate(enemy.x, enemy.y);
+            
+            let lookAngle = 0;
+            if(enemy.behavior === 'chase') {
+                lookAngle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+            } else {
+                lookAngle = enemy.targetAngle || 0;
+            }
+            ctx.rotate(lookAngle);
+
+            if(enemy.type === 'neutral_animal') {
+                if(enemy.seed < 0.33) {
+                    ctx.fillStyle = '#ffb6c1'; ctx.beginPath(); ctx.arc(0, 0, enemy.radius, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = '#ff69b4'; ctx.beginPath(); ctx.ellipse(enemy.radius, 0, 6, 8, 0, 0, Math.PI*2); ctx.fill(); 
+                } else if(enemy.seed < 0.66) {
+                    ctx.fillStyle = '#ecf0f1'; ctx.beginPath(); ctx.arc(0, 0, enemy.radius, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.ellipse(-2, -enemy.radius, 4, 12, -Math.PI/4, 0, Math.PI*2); ctx.fill(); 
+                    ctx.beginPath(); ctx.ellipse(-2, enemy.radius, 4, 12, Math.PI/4, 0, Math.PI*2); ctx.fill();  
+                    ctx.fillStyle = '#ffb6c1'; ctx.beginPath(); ctx.arc(enemy.radius, 0, 3, 0, Math.PI*2); ctx.fill(); 
+                } else {
+                    ctx.fillStyle = '#d35400'; ctx.beginPath(); ctx.arc(0, 0, enemy.radius, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-enemy.radius*0.3, -enemy.radius*0.4, 3, 0, Math.PI*2); ctx.arc(-enemy.radius*0.4, enemy.radius*0.5, 3, 0, Math.PI*2); ctx.fill(); 
+                }
+                ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(enemy.radius/2, -5, 2.5, 0, Math.PI*2); ctx.arc(enemy.radius/2, 5, 2.5, 0, Math.PI*2); ctx.fill(); 
+            }
+            else if(enemy.type === 'silly_dog') {
+                ctx.fillStyle = '#d2b48c'; ctx.beginPath(); ctx.arc(0, 0, enemy.radius, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#8b4513'; ctx.beginPath(); ctx.ellipse(0, -enemy.radius+4, enemy.radius/2, 6, 0, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#ffb6c1'; ctx.beginPath(); ctx.ellipse(enemy.radius, 0, 8, 4, 0, 0, Math.PI*2); ctx.fill(); 
+                ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(enemy.radius/2, -5, 2, 0, Math.PI*2); ctx.arc(enemy.radius/2, 5, 2, 0, Math.PI*2); ctx.fill(); 
+            } 
+            else {
+                ctx.shadowBlur = 15; ctx.shadowColor = '#e74c3c';
+                ctx.fillStyle = '#2c3e50'; ctx.beginPath(); ctx.arc(0, 0, enemy.radius, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#7f8c8d';
+                for(let i=0; i<5; i++) {
+                    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-enemy.radius-10, -10 + i*5); ctx.lineTo(-enemy.radius, 0); ctx.fill();
+                }
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#e74c3c'; ctx.beginPath(); ctx.arc(enemy.radius*0.6, -10, 4, 0, Math.PI*2); ctx.arc(enemy.radius*0.6, 10, 4, 0, Math.PI*2); ctx.fill();
+            }
+            ctx.restore();
+
+            if (enemy.hp < enemy.maxHp) {
+                const barW = enemy.radius * 2;
+                ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(enemy.x - barW/2, enemy.y - enemy.radius - 12, barW, 6);
+                ctx.fillStyle = '#e74c3c'; ctx.fillRect(enemy.x - barW/2, enemy.y - enemy.radius - 12, barW * (enemy.hp / enemy.maxHp), 6);
+            }
+        }
+
+        function render() {
+            ctx.fillStyle = '#1e272e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            if (screenShake > 0) ctx.translate((Math.random()-0.5)*screenShake, (Math.random()-0.5)*screenShake);
+            ctx.translate(-camera.x, -camera.y);
+
+            const viewBuffer = 100;
+            terrain.decorations.forEach(dec => {
+                if(dec.x > camera.x - viewBuffer && dec.x < camera.x + canvas.width + viewBuffer &&
+                   dec.y > camera.y - viewBuffer && dec.y < camera.y + canvas.height + viewBuffer) {
+                    if(dec.type === 'grass') drawGrass(dec.x, dec.y);
+                    else drawFlower(dec.x, dec.y, dec.color);
+                }
+            });
+
+            droppedWeapons.forEach(weap => {
+                ctx.save(); ctx.translate(weap.x, weap.y);
+                if (weap.isFlying) {
+                    ctx.rotate((gameTime * 30) % (Math.PI * 2));
+                    ctx.shadowBlur = 15; ctx.shadowColor = '#00ffff';
+                }
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-15, 0); ctx.lineTo(20, 0); ctx.stroke();
+                ctx.strokeStyle = '#f1c40f'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(-8, -8); ctx.lineTo(-8, 8); ctx.stroke();
+                ctx.restore();
+            });
+
+            projectiles.forEach(proj => {
+                ctx.save();
+                if (proj.type === 'explosion') {
+                    ctx.fillStyle = `rgba(241, 196, 15, ${proj.duration/20})`;
+                    ctx.beginPath(); ctx.arc(proj.x, proj.y, proj.radius, 0, Math.PI*2); ctx.fill();
+                } else if(proj.type === 'wave') {
+                    ctx.shadowBlur = 15; ctx.shadowColor = proj.color;
+                    ctx.fillStyle = proj.color; ctx.beginPath(); ctx.arc(proj.x, proj.y, proj.radius, 0, Math.PI*2); ctx.fill();
+                } else if(proj.type === 'ult_line' || proj.type === 'ult_chain') {
+                    ctx.shadowBlur = 20; ctx.shadowColor = '#e056fd';
+                    ctx.strokeStyle = proj.type === 'ult_line' ? '#e056fd' : '#00ffff'; 
+                    ctx.lineWidth = proj.type === 'ult_line' ? 10 * (proj.duration/20) : 3;
+                    ctx.beginPath(); ctx.moveTo(proj.x1, proj.y1); 
+                    let steps = 5; let dx = (proj.x2-proj.x1)/steps; let dy = (proj.y2-proj.y1)/steps;
+                    for(let i=1; i<steps; i++) { ctx.lineTo(proj.x1 + dx*i + (Math.random()-0.5)*40, proj.y1 + dy*i + (Math.random()-0.5)*40); }
+                    ctx.lineTo(proj.x2, proj.y2); ctx.stroke();
+                }
+                ctx.restore();
+            });
+
+            enemies.forEach(drawEnemy);
+            drawPlayer();
+
+            particles.forEach(p => {
+                ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color;
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2); ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+            damageTexts.forEach(dt => {
+                ctx.globalAlpha = dt.alpha; ctx.fillStyle = dt.color;
+                ctx.font = `bold ${dt.size}px Arial`; ctx.textAlign = 'center';
+                ctx.shadowBlur = 4; ctx.shadowColor = '#000';
+                ctx.fillText(dt.text, dt.x, dt.y);
+                ctx.shadowBlur = 0;
+            });
+            ctx.globalAlpha = 1;
+
+            ctx.restore();
+        }
+
+        function gameLoop() { update(); render(); requestAnimationFrame(gameLoop); }
+        updateUI(); requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
