@@ -31,9 +31,19 @@ The v1 roadmap turns the existing single-file Canvas action demo into a structur
 **Plans**: 3 plans
 
 Plans:
+**Wave 1**
 - [ ] 01-01: Create Vite app shell, scripts, entry HTML, styles, and Canvas mount.
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 01-02: Migrate existing combat loop into modular game code while preserving behavior.
+
+**Wave 3** *(blocked on Wave 1 and Wave 2 completion)*
 - [ ] 01-03: Add DOM UI shell/state wiring for upcoming weapon, narration, card, and route surfaces.
+
+Cross-cutting constraints:
+- Existing `gemini-code-1779459048019_副本.html` remains untouched as the reference demo.
+- `mountGame()` remains the stable public game entry point.
+- The first viewport shows the real app/game experience, not a marketing page.
 
 ### Phase 2: Three-Stage Combat Loop
 **Goal**: Turn endless survival into a 3-5 minute scenic-stage action loop with three weapons, stage goals, enemies, boss, and win state.
@@ -95,7 +105,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. App Skeleton And Demo Migration | 0/3 | Not started | - |
+| 1. App Skeleton And Demo Migration | 0/3 | Planned | - |
 | 2. Three-Stage Combat Loop | 0/3 | Not started | - |
 | 3. Culture, Narration, And Route Reward | 0/3 | Not started | - |
 | 4. Mobile PWA And Demo Hardening | 0/2 | Not started | - |

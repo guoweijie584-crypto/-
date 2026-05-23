@@ -11,8 +11,8 @@ See: .planning/PROJECT.md (updated 2026-05-23)
 
 Phase: 1 of 4 (App Skeleton And Demo Migration)
 Plan: 0 of 3 in current phase
-Status: Ready to plan
-Last activity: 2026-05-23 — Initialized project context, codebase map, config, research, requirements, roadmap, and state.
+Status: Ready to execute
+Last activity: 2026-05-23 — Planned Phase 1 with context, UI-SPEC, research, pattern map, walking skeleton, and three executable plans.
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -49,6 +49,7 @@ Recent decisions affecting current work:
 - Init: Use Vite + Canvas for v1, not immediate Phaser migration.
 - Init: Use demo cultural content and local AI fallback before real scenic/API integration.
 - Init: Keep the existing single-file HTML demo untouched as a reference.
+- Phase 1: Plan with three sequential waves: scaffold, migrate combat loop, integrate product shell.
 
 ### Pending Todos
 
