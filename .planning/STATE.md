@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-last_updated: "2026-05-23T07:20:12.455Z"
-last_activity: "2026-05-23 — Executed Phase 1: Vite + Canvas shell, migrated combat loop, product DOM overlays, tests, build, and browser visual verification."
+last_updated: "2026-05-23T07:41:03.602Z"
+last_activity: "2026-05-23 — Planned Phase 2 into three execution waves: weapons/upgrades, stage objectives/enemies, boss/victory summary."
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 3
+  total_plans: 6
   completed_plans: 3
   percent: 25
 ---
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-05-23)
 
 Phase: 2 of 4 (Three-Stage Combat Loop)
 Plan: 0 of 3 in current phase
-Status: Ready to plan
-Last activity: 2026-05-23 — Executed Phase 1: Vite + Canvas shell, migrated combat loop, product DOM overlays, tests, build, and browser visual verification.
+Status: Planned; ready to execute
+Last activity: 2026-05-23 — Planned Phase 2 into three execution waves: weapons/upgrades, stage objectives/enemies, boss/victory summary.
 
 Progress: [██░░░░░░░░] 25%
 
@@ -69,10 +69,11 @@ Recent decisions affecting current work:
 - Phase 1: Plan with three sequential waves: scaffold, migrate combat loop, integrate product shell.
 - Phase 1 execution: `mountGame(container, options)` is the public game entry point; shell and game communicate through app-state events.
 - Phase 1 execution: Vite/Vitest are pinned to the Vite 4 generation because the local macOS/Node environment rejected the Rollup 4 native package signature.
+- Phase 2 planning: execute in three waves: 02-01 weapons/upgrades, 02-02 stage objectives/enemies, 02-03 boss/victory/run summary.
 
 ### Pending Todos
 
-None yet.
+- Run `$gsd-execute-phase 2` to implement the three Phase 2 plans.
 
 ### Blockers/Concerns
 
@@ -89,6 +90,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-23T07:20:12.449Z
-Stopped at: Phase 2 UI-SPEC approved
-Resume file: .planning/phases/SHPL-02-three-stage-combat-loop/02-UI-SPEC.md
+Last session: 2026-05-23T07:41:03.596Z
+Stopped at: Phase 2 planned
+Resume file: .planning/phases/SHPL-02-three-stage-combat-loop/02-01-PLAN.md

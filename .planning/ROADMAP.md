@@ -106,7 +106,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. App Skeleton And Demo Migration | 3/3 | Completed | 2026-05-23 |
-| 2. Three-Stage Combat Loop | 0/3 | Not started | - |
+| 2. Three-Stage Combat Loop | 0/3 | Planned | - |
 | 3. Culture, Narration, And Route Reward | 0/3 | Not started | - |
 | 4. Mobile PWA And Demo Hardening | 0/2 | Not started | - |
 
@@ -126,4 +126,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 ---
 *Roadmap created: 2026-05-23*
-*Last updated: 2026-05-23 after Phase 1 execution*
+*Last updated: 2026-05-23 after Phase 2 planning*
