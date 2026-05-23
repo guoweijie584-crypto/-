@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-05-23T08:28:58.222Z"
-last_activity: "2026-05-23 — Completed Phase 2: weapon selection/upgrades, three scenic stages, stage enemies, two-phase Boss, victory panel, and run summary."
+last_updated: "2026-05-23T19:46:00+08:00"
+last_activity: "2026-05-23 — Quick task complete: added 双月匕, 月轮刃, and 符箓折扇 to the weapon selection panel."
 progress:
   total_phases: 4
   completed_phases: 2
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-05-23)
 Phase: 3 of 4 (Culture, Narration, And Route Reward)
 Plan: 0 of 3 in current phase
 Status: Ready to plan
-Last activity: 2026-05-23 — Completed Phase 2: weapon selection/upgrades, three scenic stages, stage enemies, two-phase Boss, victory panel, and run summary.
+Last activity: 2026-05-23 — Quick task complete: added 双月匕, 月轮刃, and 符箓折扇 to the weapon selection panel.
 
 Progress: [█████░░░░░] 50%
 
@@ -76,6 +76,17 @@ Recent decisions affecting current work:
 ### Pending Todos
 
 - Run `$gsd-plan-phase 3` to plan culture cards, local narrator fallback, travel card, and route reward.
+
+### Quick Tasks Completed
+
+| Date | Task | Summary |
+|------|------|---------|
+| 2026-05-23 | Selectable extra weapons | Added 双月匕, 月轮刃, and 符箓折扇 to the weapon panel as real selectable weapons with gameplay definitions and upgrades. |
+| 2026-05-23 | Six distinct weapon styles | Replaced duplicated orbit visuals with six styles: sword, blade, spear, daggers, ring blade, and talisman fan. |
+| 2026-05-23 | Six orbiting weapons | Reused the existing sword, blade, and spear skins twice to render six evenly spaced orbiting weapons around the player. |
+| 2026-05-23 | Three orbiting weapons | Rendered sword, blade, and spear together around the player with the selected weapon still controlling gameplay attacks. |
+| 2026-05-23 | Orbiting sword with static player | Decoupled player body rotation from weapon rendering so the sword orbits around the character while gameplay aim remains unchanged. |
+| 2026-05-23 | Anime comic player character | Replaced the active player rendering with a manga/comic-style Canvas hero while keeping gameplay and the original HTML reference untouched. |
 
 ### Blockers/Concerns
 

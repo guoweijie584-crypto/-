@@ -15,6 +15,7 @@ import { onEnemySpritesReady, onPlayerSpriteReady, render } from './rendering.js
 import { createRunSummary } from './runSummary.js';
 import { STAGES, createStageProgress, getStageDefinition, getStageSnapshot } from './stages.js';
 import { getWeaponDefinition, getWeaponUpgrades } from './weapons.js';
+import { createSoundController } from './audio.js';
 
 export function mountGame(container, options = {}) {
   if (!container) {
@@ -30,6 +31,7 @@ export function mountGame(container, options = {}) {
   const ctx = canvas.getContext('2d');
   const emit = options.emit ?? (() => {});
   const state = createInitialGameState({ selectedWeapon: options.selectedWeapon });
+  const sound = options.sound ?? createSoundController();
   let animationFrame = 0;
   let running = false;
   let input;
@@ -103,6 +105,7 @@ export function mountGame(container, options = {}) {
     state.selectedWeapon = weapon.id;
     state.weapon = weapon;
     state.runStats.selectedWeapon = weapon.id;
+    sound.play('weaponSelect');
     updateUI();
     render(ctx, canvas, state, input);
   }
@@ -111,6 +114,7 @@ export function mountGame(container, options = {}) {
     const { player, enemies, projectiles } = state;
     const { mouse } = input;
     if (player.energy < player.maxEnergy || state.gameState !== 'playing') return;
+    sound.play('ultimate');
     player.energy = 0;
     state.screenShake = 25;
 
@@ -138,6 +142,7 @@ export function mountGame(container, options = {}) {
     const { player, droppedWeapons } = state;
     const { mouse } = input;
     if (!player.hasWeapon || state.gameState !== 'playing') return;
+    sound.play('throw');
 
     const angle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
     droppedWeapons.push({
@@ -183,6 +188,7 @@ export function mountGame(container, options = {}) {
     player.swingEnd = aimAngle + attack.arc / 2;
     player.swingWidth = weapon.visual?.swingWidth ?? 8;
     player.swingColor = weapon.visual?.color ?? `hsl(${player.colorHue}, 100%, 60%)`;
+    sound.play('attack');
 
     const realDamage = attack.damage * player.damageMult;
     const realRange = attack.range * player.rangeMult;
@@ -220,6 +226,7 @@ export function mountGame(container, options = {}) {
           if (talisman.hp <= 0) {
             talisman.broken = true;
             spawnText(state, talisman.x, talisman.y - 28, '护符破', '#D7A84B', 18);
+            sound.play('enemyDeath');
           }
           updateObjectiveProgress();
         }
@@ -245,6 +252,7 @@ export function mountGame(container, options = {}) {
   function damageEnemy(enemy, dmg, isCrit = false, vfxColor = '#fff') {
     const { player } = state;
     enemy.hp -= dmg;
+    sound.play('hit');
     spawnText(state, enemy.x, enemy.y - enemy.radius, Math.floor(dmg), isCrit ? '#54C6B2' : '#D7A84B', isCrit ? 22 : 16);
     spawnParticles(state, enemy.x, enemy.y, vfxColor, 6, 4);
 
@@ -255,6 +263,7 @@ export function mountGame(container, options = {}) {
       }
 
       state.kills += 1;
+      sound.play('enemyDeath');
       player.exp += enemy.expValue;
       player.energy = Math.min(player.maxEnergy, player.energy + 6 * player.energyGainMult);
       spawnParticles(state, enemy.x, enemy.y, '#C9493D', 15, 6);
@@ -278,6 +287,7 @@ export function mountGame(container, options = {}) {
       player.level += 1;
       player.maxExp = Math.floor(player.maxExp * 1.4 + 50);
       state.gameState = 'upgrade';
+      sound.play('upgrade');
       showUpgradeScreen();
     }
   }
@@ -305,6 +315,7 @@ export function mountGame(container, options = {}) {
     spawnText(state, state.player.x, state.player.y - 55, `功法：${upgrade.title}`, '#D7A84B', 20);
     state.pendingUpgrades = [];
     state.gameState = 'playing';
+    sound.play('upgrade');
     emit('game:upgrade-selected', { upgradeId: upgrade.id, title: upgrade.title });
     updateUI();
   }
@@ -312,6 +323,7 @@ export function mountGame(container, options = {}) {
   function hurtPlayer(dmg) {
     const { player } = state;
     player.hp -= dmg;
+    sound.play('hit');
     state.runStats.damageTaken += dmg;
     state.screenShake = 15;
     spawnText(state, player.x, player.y - 20, `-${Math.floor(dmg)}`, '#C9493D', 20);
@@ -319,6 +331,7 @@ export function mountGame(container, options = {}) {
 
     if (player.hp <= 0) {
       state.gameState = 'gameover';
+      sound.play('playerDeath');
       updateUI();
     }
   }
@@ -384,6 +397,7 @@ export function mountGame(container, options = {}) {
       state.objectives.lamps.forEach((lamp) => {
         if (!lamp.lit && state.kills >= 2 && distance(state.player.x, state.player.y, lamp.x, lamp.y) < 70) {
           lamp.lit = true;
+          sound.play('stage');
           spawnText(state, lamp.x, lamp.y - 34, '灯明', '#D7A84B', 18);
           spawnParticles(state, lamp.x, lamp.y, '#D7A84B', 16, 5, 0.04);
           updateObjectiveProgress();
@@ -399,6 +413,7 @@ export function mountGame(container, options = {}) {
       state.objectives.echoFragments.forEach((fragment) => {
         if (!fragment.collected && distance(state.player.x, state.player.y, fragment.x, fragment.y) < 42) {
           fragment.collected = true;
+          sound.play('pickup');
           state.runStats.echoFragments += 1;
           spawnText(state, fragment.x, fragment.y - 26, '回声+1', '#54C6B2', 16);
           spawnParticles(state, fragment.x, fragment.y, '#54C6B2', 14, 4, 0.05);
@@ -472,12 +487,14 @@ export function mountGame(container, options = {}) {
       state.objectives.talismans = createTalismans();
     }
     spawnText(state, state.player.x, state.player.y - 70, getStageDefinition(state.currentStageId).title, '#D7A84B', 22);
+    sound.play('stage');
     emit('game:stage-changed', getSnapshot());
     updateUI();
   }
 
   function startBoss() {
     state.gameState = 'boss';
+    sound.play('stage');
     state.boss = createBoss({ x: state.player.x, y: state.player.y - 280 });
     const bossEnemy = createBossEnemy(state.boss, { x: state.player.x, y: state.player.y - 280 });
     state.boss.enemyRef = bossEnemy;
@@ -522,6 +539,7 @@ export function mountGame(container, options = {}) {
     }
     state.gameState = 'victory';
     state.runSummary = createRunSummary(state);
+    sound.play('victory');
     spawnParticles(state, state.player.x, state.player.y, '#D7A84B', 36, 10, 0.03);
     emit('game:completed', state.runSummary);
     updateUI();
@@ -569,6 +587,7 @@ export function mountGame(container, options = {}) {
         }
       } else if (!player.hasWeapon && distance(player.x, player.y, weapon.x, weapon.y) < player.radius + weapon.radius) {
         player.hasWeapon = true;
+        sound.play('pickup');
         spawnText(state, player.x, player.y - 30, '获得武器！', '#54C6B2');
         state.droppedWeapons = state.droppedWeapons.filter((item) => item !== weapon);
       }

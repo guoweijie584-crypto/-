@@ -18,6 +18,10 @@ describe('renderShell', () => {
     expect(root.textContent).toContain('山河破阵录：古城夜巡');
     expect(root.textContent).toContain('开始夜巡');
     expect(root.textContent).toContain('选择兵器');
+    expect(root.querySelectorAll('.weapon-choice')).toHaveLength(6);
+    expect(root.textContent).toContain('双月匕');
+    expect(root.textContent).toContain('月轮刃');
+    expect(root.textContent).toContain('符箓折扇');
     expect(root.textContent).toContain('选择功法');
     expect(root.querySelector('#stage-panel')).toBeTruthy();
     expect(root.querySelector('[data-hud="objective"]')).toBeTruthy();
@@ -37,10 +41,10 @@ describe('renderShell', () => {
     const state = createAppState();
     const shell = renderShell(root, state, demoContent);
 
-    state.emit('weapon:selected', { weaponId: 'spear' });
+    state.emit('weapon:selected', { weaponId: 'fan' });
     shell.updateWeapon(state.getSnapshot().selectedWeapon);
 
-    expect(root.querySelector('[data-weapon="spear"]').classList.contains('is-active')).toBe(true);
+    expect(root.querySelector('[data-weapon="fan"]').classList.contains('is-active')).toBe(true);
   });
 
   it('renders weapon-specific upgrade choices', () => {

@@ -5,8 +5,8 @@ export const ENEMY_ACTIONS = ['idle', 'move', 'attack', 'hit', 'death'];
 export const VISUAL_ASSET_MANIFEST = {
   player: {
     id: 'night-patrol-hero',
-    label: '巡夜少侠',
-    style: 'semi-real 2.5D modeled wuxia',
+    label: '漫画巡夜少侠',
+    style: 'anime comic wuxia hero, cel-shaded H5 sprite',
     actions: PLAYER_ACTIONS,
     sprite: {
       src: '/assets/characters/warrior-isometric-idle.png',
@@ -24,14 +24,19 @@ export const VISUAL_ASSET_MANIFEST = {
       }
     },
     fallback: {
-      mode: 'modeled-canvas',
+      mode: 'anime-comic-canvas',
       palette: {
-        coat: '#2f3f35',
-        coatShadow: '#111815',
-        armor: '#D7A84B',
-        cloth: '#C9493D',
-        skin: '#d8b38a',
-        highlight: '#f4efe0'
+        ink: '#151318',
+        hair: '#24202C',
+        hairHighlight: '#6A4C93',
+        coat: '#2E6F95',
+        coatShadow: '#153243',
+        scarf: '#E85D75',
+        trim: '#F6C85F',
+        skin: '#F1C6A8',
+        blush: '#F58AA7',
+        eye: '#58D5F6',
+        highlight: '#FFF7E8'
       }
     }
   },
@@ -124,6 +129,30 @@ export const VISUAL_ASSET_MANIFEST = {
       material: 'lacquered wood shaft, steel spearhead, red tassel',
       actions: ['thrust', 'dash', 'throw'],
       fallback: { palette: { metal: '#f4efe0', edge: '#9ca9a4', shaft: '#6f4424', tassel: '#C9493D', glow: '#f4efe0' } }
+    },
+    daggers: {
+      id: 'daggers',
+      label: '双月匕',
+      silhouette: 'twin-daggers',
+      material: 'short crescent steel, wrapped black grips, cyan charm cords',
+      actions: ['orbit', 'flash'],
+      fallback: { palette: { metal: '#EAF7FF', edge: '#8DD7F7', guard: '#54C6B2', grip: '#1A2630', glow: '#58D5F6' } }
+    },
+    ring: {
+      id: 'ring',
+      label: '月轮刃',
+      silhouette: 'ring-blade',
+      material: 'gold-edged circular blade with inner jade glow',
+      actions: ['orbit', 'slice'],
+      fallback: { palette: { metal: '#F9E7B0', edge: '#FFF7D1', guard: '#D7A84B', grip: '#36534C', glow: '#F6C85F' } }
+    },
+    fan: {
+      id: 'fan',
+      label: '符箓折扇',
+      silhouette: 'talisman-fan',
+      material: 'painted paper fan ribs, red talisman seal, brass pivot',
+      actions: ['orbit', 'seal'],
+      fallback: { palette: { paper: '#FFF7E8', ink: '#25342C', seal: '#C9493D', guard: '#D7A84B', glow: '#E85D75' } }
     }
   },
   sceneProps: {
@@ -191,7 +220,7 @@ export function validateVisualAssetManifest(manifest = VISUAL_ASSET_MANIFEST) {
     }
   });
 
-  ['sword', 'blade', 'spear'].forEach((weaponId) => {
+  ['sword', 'blade', 'spear', 'daggers', 'ring', 'fan'].forEach((weaponId) => {
     if (!manifest.weapons[weaponId]?.fallback) {
       issues.push(`${weaponId} missing modeled weapon fallback`);
     }

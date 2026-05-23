@@ -1,4 +1,4 @@
-import { getWeaponDefinition } from './weapons.js';
+import { WEAPON_IDS, getWeaponDefinition } from './weapons.js';
 import {
   getEffectVisual,
   getEnemyVisual,
@@ -9,6 +9,8 @@ import {
 } from './visualAssets.js';
 
 const PLAYER_SPRITE = createSpriteState(getPlayerVisual().sprite);
+
+const ORBITING_WEAPON_IDS = ['sword', 'blade', 'spear', 'daggers', 'ring', 'fan'];
 
 const ENEMY_SPRITES = Object.fromEntries(
   Object.entries({
@@ -80,8 +82,7 @@ export function onEnemySpritesReady(listener) {
 export function render(ctx, canvas, state, input) {
   const { camera, terrain, droppedWeapons, projectiles, enemies, particles, damageTexts } = state;
 
-  ctx.fillStyle = '#101613';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  drawAncientCityWallpaper(ctx, canvas);
 
   ctx.save();
   if (state.screenShake > 0) {
@@ -242,22 +243,194 @@ function drawTalisman(ctx, talisman) {
 
 function drawWorld(ctx, canvas, camera, terrain) {
   const cityMap = terrain.cityMap;
-  if (!cityMap) {
-    drawFallbackWorld(ctx, canvas, camera, terrain);
-    return;
-  }
-
-  ctx.fillStyle = '#111815';
-  ctx.fillRect(camera.x - 80, camera.y - 80, canvas.width + 160, canvas.height + 160);
-
-  drawCityBounds(ctx, cityMap);
-  drawCanals(ctx, cityMap.canals);
-  drawRoads(ctx, cityMap.roads);
-  drawBridges(ctx, cityMap.bridges);
-  drawBuildings(ctx, cityMap.buildings);
-  drawCityDecorations(ctx, cityMap.decorations);
+  if (!cityMap) return;
   drawLandmarkLabels(ctx, cityMap.landmarks);
-  drawTerrainDecorations(ctx, canvas, camera, terrain.decorations);
+}
+
+function drawAncientCityWallpaper(ctx, canvas) {
+  const width = canvas.width;
+  const height = canvas.height;
+  const horizonY = height * 0.62;
+
+  const sky = ctx.createLinearGradient(0, 0, 0, horizonY);
+  sky.addColorStop(0, '#0b1226');
+  sky.addColorStop(0.55, '#1a2347');
+  sky.addColorStop(1, '#3a3556');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, width, horizonY);
+
+  drawMoon(ctx, width * 0.78, height * 0.18, Math.min(80, height * 0.11));
+  drawStarfield(ctx, 0, 0, width, horizonY);
+  drawDistantMountains(ctx, 0, horizonY, width);
+  drawCitySilhouette(ctx, 0, horizonY, width);
+
+  const ground = ctx.createLinearGradient(0, horizonY, 0, height);
+  ground.addColorStop(0, '#241a1f');
+  ground.addColorStop(0.4, '#181618');
+  ground.addColorStop(1, '#0f0d11');
+  ctx.fillStyle = ground;
+  ctx.fillRect(0, horizonY, width, height - horizonY);
+
+  drawGroundTexture(ctx, 0, horizonY, width, height - horizonY);
+  drawMistBands(ctx, 0, horizonY, width);
+}
+
+function drawMoon(ctx, cx, cy, radius) {
+  const halo = ctx.createRadialGradient(cx, cy, radius * 0.4, cx, cy, radius * 3.4);
+  halo.addColorStop(0, 'rgba(247, 232, 196, 0.45)');
+  halo.addColorStop(0.4, 'rgba(247, 232, 196, 0.12)');
+  halo.addColorStop(1, 'rgba(247, 232, 196, 0)');
+  ctx.fillStyle = halo;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius * 3.4, 0, Math.PI * 2);
+  ctx.fill();
+
+  const body = ctx.createRadialGradient(cx - radius * 0.3, cy - radius * 0.3, radius * 0.2, cx, cy, radius);
+  body.addColorStop(0, '#fff7d8');
+  body.addColorStop(0.7, '#f5e2a5');
+  body.addColorStop(1, '#c9a96b');
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawStarfield(ctx, x, y, width, height) {
+  ctx.fillStyle = 'rgba(244, 239, 224, 0.85)';
+  const cols = 22;
+  const rows = 9;
+  for (let i = 0; i < cols; i += 1) {
+    for (let j = 0; j < rows; j += 1) {
+      const seed = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453;
+      const rand = seed - Math.floor(seed);
+      if (rand > 0.78) {
+        const sx = x + (i + (rand * 7) % 1) * (width / cols);
+        const sy = y + (j + ((rand * 13) % 1)) * (height / rows);
+        const r = rand > 0.95 ? 1.8 : 0.9;
+        ctx.beginPath();
+        ctx.arc(sx, sy, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+}
+
+function drawDistantMountains(ctx, x, horizonY, width) {
+  ctx.fillStyle = '#2a2a4a';
+  ctx.beginPath();
+  ctx.moveTo(x, horizonY);
+  const peaks = 8;
+  for (let i = 0; i <= peaks; i += 1) {
+    const px = x + (width * i) / peaks;
+    const py = horizonY - 120 - Math.sin(i * 1.3) * 60 - ((i % 2) ? 30 : 0);
+    ctx.lineTo(px, py);
+  }
+  ctx.lineTo(x + width, horizonY);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#1d2238';
+  ctx.beginPath();
+  ctx.moveTo(x, horizonY);
+  const front = 12;
+  for (let i = 0; i <= front; i += 1) {
+    const px = x + (width * i) / front;
+    const py = horizonY - 70 - Math.sin(i * 1.7 + 0.5) * 40 - ((i % 3 === 0) ? 35 : 0);
+    ctx.lineTo(px, py);
+  }
+  ctx.lineTo(x + width, horizonY);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawCitySilhouette(ctx, x, horizonY, width) {
+  ctx.fillStyle = '#0d0e18';
+  const buildings = [
+    { w: 140, h: 90, type: 'wall' },
+    { w: 180, h: 150, type: 'tower' },
+    { w: 220, h: 70, type: 'wall' },
+    { w: 110, h: 60, type: 'wall' },
+    { w: 260, h: 130, type: 'gate' },
+    { w: 150, h: 95, type: 'wall' },
+    { w: 200, h: 165, type: 'pagoda' },
+    { w: 180, h: 80, type: 'wall' },
+    { w: 240, h: 110, type: 'tower' },
+    { w: 160, h: 70, type: 'wall' },
+    { w: 220, h: 100, type: 'wall' },
+    { w: 170, h: 140, type: 'tower' },
+    { w: 200, h: 70, type: 'wall' },
+    { w: 240, h: 95, type: 'wall' }
+  ];
+
+  let cursor = x - 60;
+  const baseY = horizonY;
+  buildings.forEach((b) => {
+    if (cursor > x + width) return;
+    const top = baseY - b.h;
+    ctx.fillRect(cursor, top, b.w, b.h);
+
+    if (b.type === 'tower' || b.type === 'gate') {
+      ctx.beginPath();
+      ctx.moveTo(cursor - 8, top);
+      ctx.lineTo(cursor + b.w / 2, top - 36);
+      ctx.lineTo(cursor + b.w + 8, top);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    if (b.type === 'pagoda') {
+      let py = top;
+      let pw = b.w;
+      for (let layer = 0; layer < 4; layer += 1) {
+        ctx.beginPath();
+        ctx.moveTo(cursor + (b.w - pw) / 2 - 10, py);
+        ctx.lineTo(cursor + b.w / 2, py - 22);
+        ctx.lineTo(cursor + b.w - (b.w - pw) / 2 + 10, py);
+        ctx.closePath();
+        ctx.fill();
+        py -= 30;
+        pw -= 30;
+        if (pw < 30) break;
+        ctx.fillRect(cursor + (b.w - pw) / 2, py, pw, 26);
+        py -= 0;
+      }
+    }
+
+    cursor += b.w + 6;
+  });
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(215, 168, 75, 0.55)';
+  for (let i = 0; i < 28; i += 1) {
+    const lx = x + (i / 28) * width + Math.sin(i) * 30;
+    const ly = horizonY - 14 - ((i * 53) % 90);
+    ctx.fillRect(lx, ly, 3, 3);
+  }
+  ctx.restore();
+}
+
+function drawGroundTexture(ctx, x, y, width, height) {
+  ctx.strokeStyle = 'rgba(244, 239, 224, 0.05)';
+  ctx.lineWidth = 1;
+  for (let row = 0; row < 14; row += 1) {
+    const ry = y + (height * row) / 14;
+    ctx.beginPath();
+    ctx.moveTo(x, ry);
+    ctx.lineTo(x + width, ry + Math.sin(row) * 18);
+    ctx.stroke();
+  }
+}
+
+function drawMistBands(ctx, x, horizonY, width) {
+  for (let i = 0; i < 4; i += 1) {
+    const my = horizonY + 30 + i * 70;
+    const mist = ctx.createLinearGradient(0, my - 30, 0, my + 50);
+    mist.addColorStop(0, 'rgba(180, 200, 220, 0)');
+    mist.addColorStop(0.5, `rgba(180, 200, 220, ${0.12 - i * 0.022})`);
+    mist.addColorStop(1, 'rgba(180, 200, 220, 0)');
+    ctx.fillStyle = mist;
+    ctx.fillRect(x, my - 30, width, 80);
+  }
 }
 
 function drawFallbackWorld(ctx, canvas, camera, terrain) {
@@ -547,12 +720,11 @@ export function drawPlayer(ctx, state, input) {
     ctx.stroke();
   }
 
-  drawPlayerBody(ctx, aimAngle, action, gameTime);
-  ctx.rotate(aimAngle);
-
   if (player.hasWeapon) {
-    drawWeaponSkin(ctx, state.weapon.id, { scale: Math.min(1.25, player.rangeMult), glow: true });
+    drawOrbitingWeapons(ctx, state, aimAngle);
   }
+
+  drawPlayerBody(ctx, action, gameTime);
 
   ctx.restore();
 
@@ -564,14 +736,60 @@ export function drawPlayer(ctx, state, input) {
   }
 }
 
-function drawPlayerBody(ctx, aimAngle, action, gameTime) {
-  const sprite = getPlayerSprite();
+function drawOrbitingWeapons(ctx, state, aimAngle) {
+  const { player, gameTime } = state;
+  const scale = Math.min(1.25, player.rangeMult);
+  const orbitRadius = (player.radius + 25) * scale;
+  const attackProgress = player.isSwingAnimating
+    ? 1 - Math.max(0, player.swingTimer) / 10
+    : 0;
+  const idleOrbit = gameTime * 2.4;
+  const swingOrbit = lerpAngle(player.swingStart, player.swingEnd, easeOutCubic(attackProgress));
+  const selectedIndex = Math.max(0, ORBITING_WEAPON_IDS.indexOf(state.weapon.id));
+  const step = (Math.PI * 2) / ORBITING_WEAPON_IDS.length;
+  const baseOrbitAngle = player.isSwingAnimating ? swingOrbit - selectedIndex * step : aimAngle + idleOrbit;
+
+  ORBITING_WEAPON_IDS.forEach((weaponId, index) => {
+    const orbitAngle = baseOrbitAngle + index * step;
+    const active = player.isSwingAnimating && index === selectedIndex;
+    drawOrbitingWeapon(ctx, weaponId, orbitRadius, orbitAngle, scale, active);
+  });
+}
+
+function drawOrbitingWeapon(ctx, weaponId, orbitRadius, orbitAngle, scale, active) {
+  const orbitX = Math.cos(orbitAngle) * orbitRadius;
+  const orbitY = Math.sin(orbitAngle) * orbitRadius;
+
+  drawWeaponOrbitTrail(ctx, weaponId, orbitRadius, orbitAngle, active);
+
+  ctx.save();
+  ctx.translate(orbitX, orbitY);
+  ctx.rotate(orbitAngle + Math.PI / 2);
+  drawWeaponSkin(ctx, weaponId, { originX: -10, scale, glow: true });
+  ctx.restore();
+}
+
+function drawWeaponOrbitTrail(ctx, weaponId, orbitRadius, orbitAngle, active) {
+  const visual = getWeaponVisual(weaponId).fallback.palette;
+  ctx.save();
+  ctx.globalAlpha = active ? 0.46 : 0.24;
+  ctx.strokeStyle = visual.glow ?? '#54C6B2';
+  ctx.lineWidth = active ? 5 : 2;
+  ctx.beginPath();
+  ctx.arc(0, 0, orbitRadius, orbitAngle - 0.75, orbitAngle + 0.18);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawPlayerBody(ctx, action, gameTime) {
+  const visual = getPlayerVisual();
+  const sprite = visual.fallback.mode === 'anime-comic-canvas' ? null : getPlayerSprite();
   if (!sprite) {
-    drawModeledHeroFallback(ctx, aimAngle, action, gameTime);
+    drawAnimeHeroFallback(ctx, action, gameTime);
     return;
   }
 
-  const directionFrame = getPlayerDirectionFrame(aimAngle);
+  const directionFrame = 0;
   const bob = action === 'run' ? Math.sin(gameTime * 12) * 3 : Math.sin(gameTime * 4) * 1.2;
   ctx.save();
   ctx.shadowBlur = 16;
@@ -587,75 +805,183 @@ function drawPlayerBody(ctx, aimAngle, action, gameTime) {
     56,
     70
   );
-  drawHeroArmorOverlay(ctx, aimAngle, action, gameTime);
+  drawHeroComicOverlay(ctx, action, gameTime);
   ctx.restore();
 }
 
-function drawModeledHeroFallback(ctx, aimAngle, action, gameTime) {
+function drawAnimeHeroFallback(ctx, action, gameTime) {
   const palette = getPlayerVisual().fallback.palette;
   const bob = action === 'run' ? Math.sin(gameTime * 12) * 2.5 : Math.sin(gameTime * 4) * 1.2;
+  const attackLean = action.startsWith('attack') ? 0.16 : 0;
+  const runStep = action === 'run' ? Math.sin(gameTime * 14) : 0;
 
   ctx.save();
   ctx.translate(0, bob);
-  ctx.rotate(aimAngle);
 
-  const bodyGradient = createRadialGradient(ctx, -8, -10, 4, 0, 0, 35, palette.coat);
-  bodyGradient.addColorStop(0, palette.highlight);
-  bodyGradient.addColorStop(0.28, palette.armor);
-  bodyGradient.addColorStop(0.52, palette.coat);
-  bodyGradient.addColorStop(1, palette.coatShadow);
+  ctx.shadowBlur = action.startsWith('attack') ? 20 : 10;
+  ctx.shadowColor = action.startsWith('attack') ? palette.trim : 'rgba(0,0,0,0.48)';
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
 
-  ctx.shadowBlur = action.startsWith('attack') ? 18 : 10;
-  ctx.shadowColor = action.startsWith('attack') ? palette.armor : 'rgba(0,0,0,0.55)';
-  ctx.fillStyle = bodyGradient;
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
   ctx.beginPath();
-  ctx.ellipse(0, 0, 18, 24, 0, 0, Math.PI * 2);
+  ctx.ellipse(-2, 32, 19, 7, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = palette.cloth;
+  ctx.strokeStyle = palette.ink;
+  ctx.lineWidth = 4;
+  ctx.fillStyle = palette.coatShadow;
   ctx.beginPath();
-  ctx.moveTo(-12, 8);
-  ctx.lineTo(0, 32);
-  ctx.lineTo(14, 8);
-  closeWeaponPath(ctx, -12, 8);
+  ctx.moveTo(-18, -6);
+  ctx.quadraticCurveTo(-30, 12 + runStep * 3, -21, 31);
+  ctx.lineTo(-5, 24);
+  ctx.lineTo(13, 31);
+  ctx.quadraticCurveTo(25, 14 - runStep * 3, 16, -5);
+  ctx.closePath();
   ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = palette.coat;
+  ctx.beginPath();
+  ctx.moveTo(-14, -9);
+  ctx.quadraticCurveTo(1, -18, 17, -8);
+  ctx.lineTo(14 + attackLean * 16, 19);
+  ctx.quadraticCurveTo(1, 30, -13, 19);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.strokeStyle = palette.trim;
+  ctx.lineWidth = 2.4;
+  ctx.beginPath();
+  ctx.moveTo(-10, -3);
+  ctx.lineTo(10, 17);
+  ctx.moveTo(10, -3);
+  ctx.lineTo(-8, 18);
+  ctx.stroke();
+
+  ctx.strokeStyle = palette.ink;
+  ctx.lineWidth = 4;
+  ctx.fillStyle = palette.scabbard ?? palette.hair;
+  ctx.beginPath();
+  ctx.moveTo(-22, 6);
+  ctx.lineTo(-31, 20 + runStep * 4);
+  ctx.moveTo(20, 6);
+  ctx.lineTo(30, 18 - runStep * 4);
+  ctx.stroke();
 
   ctx.fillStyle = palette.skin;
   ctx.beginPath();
-  ctx.arc(6, -22, 9, 0, Math.PI * 2);
+  ctx.arc(25, 18 - runStep * 4, 4.5, 0, Math.PI * 2);
+  ctx.arc(-26, 20 + runStep * 4, 4.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.strokeStyle = palette.ink;
+  ctx.lineWidth = 3.5;
+  ctx.beginPath();
+  ctx.moveTo(-8, 26);
+  ctx.lineTo(-15, 39 + Math.max(0, runStep) * 3);
+  ctx.moveTo(8, 26);
+  ctx.lineTo(15, 39 + Math.max(0, -runStep) * 3);
+  ctx.stroke();
+
+  ctx.fillStyle = palette.skin;
+  ctx.strokeStyle = palette.ink;
+  ctx.lineWidth = 3.5;
+  ctx.beginPath();
+  ctx.ellipse(3, -25, 13, 15, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = palette.hair;
+  ctx.strokeStyle = palette.ink;
+  ctx.lineWidth = 3.5;
+  ctx.beginPath();
+  ctx.moveTo(-10, -33);
+  ctx.quadraticCurveTo(2, -48, 18, -34);
+  ctx.quadraticCurveTo(23, -24, 15, -14);
+  ctx.lineTo(11, -28);
+  ctx.lineTo(5, -15);
+  ctx.lineTo(-1, -30);
+  ctx.lineTo(-9, -15);
+  ctx.quadraticCurveTo(-17, -26, -10, -33);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.strokeStyle = palette.hairHighlight;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(3, -42);
+  ctx.quadraticCurveTo(12, -39, 16, -30);
+  ctx.stroke();
+
+  ctx.fillStyle = palette.eye;
+  ctx.beginPath();
+  ctx.ellipse(8, -25, 2.8, 4.2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = palette.highlight;
+  ctx.beginPath();
+  ctx.arc(9, -27, 1, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = palette.coatShadow;
+  ctx.strokeStyle = palette.ink;
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(10, -24, 2.5, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.moveTo(3, -26);
+  ctx.lineTo(12, -29);
+  ctx.stroke();
 
-  ctx.strokeStyle = palette.armor;
-  ctx.lineWidth = 2.5;
+  ctx.fillStyle = palette.blush;
+  ctx.globalAlpha = 0.42;
   ctx.beginPath();
-  ctx.moveTo(-12, -10);
-  ctx.lineTo(13, 9);
-  ctx.moveTo(-10, 9);
-  ctx.lineTo(12, -8);
+  ctx.ellipse(13, -20, 3.5, 1.8, -0.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  ctx.fillStyle = palette.scarf;
+  ctx.strokeStyle = palette.ink;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(-8, -12);
+  ctx.lineTo(13, -13);
+  ctx.lineTo(24, -4 + Math.sin(gameTime * 7) * 2);
+  ctx.lineTo(7, -3);
+  ctx.closePath();
+  ctx.fill();
   ctx.stroke();
 
   ctx.restore();
 }
 
-function drawHeroArmorOverlay(ctx, aimAngle, action, gameTime) {
+function drawHeroComicOverlay(ctx, action, gameTime) {
   const palette = getPlayerVisual().fallback.palette;
   ctx.save();
-  ctx.rotate(aimAngle);
-  ctx.globalAlpha = action.startsWith('attack') ? 0.86 : 0.62;
-  ctx.strokeStyle = palette.armor;
-  ctx.lineWidth = 2;
+  ctx.globalAlpha = action.startsWith('attack') ? 0.9 : 0.7;
+  ctx.strokeStyle = palette.trim;
+  ctx.lineWidth = 2.2;
   ctx.beginPath();
-  ctx.moveTo(-13, -18 + Math.sin(gameTime * 8) * 1.5);
-  ctx.lineTo(12, 8);
-  ctx.moveTo(-10, 7);
-  ctx.lineTo(12, -16);
+  ctx.moveTo(-15, -18 + Math.sin(gameTime * 8) * 1.5);
+  ctx.quadraticCurveTo(-1, -7, 13, 8);
+  ctx.moveTo(-12, 8);
+  ctx.quadraticCurveTo(0, -2, 12, -17);
+  ctx.stroke();
+  ctx.globalAlpha = 0.55;
+  ctx.strokeStyle = palette.eye;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(4, -25, 18, -0.2, 0.45);
   ctx.stroke();
   ctx.restore();
+}
+
+function easeOutCubic(value) {
+  const t = Math.max(0, Math.min(1, value));
+  return 1 - (1 - t) ** 3;
+}
+
+function lerpAngle(start, end, progress) {
+  return start + (end - start) * progress;
 }
 
 function drawModeledSlashArc(ctx, player) {
@@ -859,7 +1185,7 @@ function drawDroppedWeapons(ctx, state, droppedWeapons) {
 
 function drawWeaponSkin(ctx, weaponId, options = {}) {
   const weapon = getWeaponDefinition(weaponId);
-  const visual = getWeaponVisual(weapon.id);
+  const visual = getWeaponVisual(weaponId);
   const { originX = 11, scale = 1, glow = false } = options;
 
   ctx.save();
@@ -873,10 +1199,16 @@ function drawWeaponSkin(ctx, weaponId, options = {}) {
     ctx.shadowColor = visual.fallback.palette.glow ?? weapon.visual?.color ?? '#f7f1d2';
   }
 
-  if (weapon.id === 'blade') {
+  if (weaponId === 'blade') {
     drawBladeSkin(ctx, visual);
-  } else if (weapon.id === 'spear') {
+  } else if (weaponId === 'spear') {
     drawSpearSkin(ctx, visual);
+  } else if (weaponId === 'daggers') {
+    drawDaggersSkin(ctx, visual);
+  } else if (weaponId === 'ring') {
+    drawRingBladeSkin(ctx, visual);
+  } else if (weaponId === 'fan') {
+    drawFanSkin(ctx, visual);
   } else {
     drawSwordSkin(ctx, visual);
   }
@@ -998,6 +1330,116 @@ function drawSpearSkin(ctx, visual) {
   closeWeaponPath(ctx, 62, -8);
   ctx.fill();
   ctx.stroke();
+}
+
+function drawDaggersSkin(ctx, visual) {
+  const palette = visual.fallback.palette;
+
+  drawSingleDagger(ctx, palette, -8, -8, -0.35);
+  drawSingleDagger(ctx, palette, -8, 8, 0.35);
+
+  ctx.strokeStyle = palette.glow;
+  ctx.lineWidth = 1.5;
+  ctx.globalAlpha = 0.72;
+  ctx.beginPath();
+  ctx.moveTo(8, -8);
+  ctx.lineTo(27, -14);
+  ctx.moveTo(8, 8);
+  ctx.lineTo(27, 14);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+function drawSingleDagger(ctx, palette, x, y, rotation) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+  drawGrip(ctx, -4, 12, palette);
+  const blade = createWeaponGradient(ctx, 9, 0, 42, 0, palette.metal);
+  blade.addColorStop(0, palette.edge);
+  blade.addColorStop(0.52, palette.metal);
+  blade.addColorStop(1, '#ffffff');
+  ctx.fillStyle = blade;
+  ctx.strokeStyle = palette.edge;
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(9, -4);
+  ctx.lineTo(36, -2);
+  ctx.lineTo(46, 0);
+  ctx.lineTo(36, 2);
+  ctx.lineTo(9, 4);
+  closeWeaponPath(ctx, 9, -4);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawRingBladeSkin(ctx, visual) {
+  const palette = visual.fallback.palette;
+  const ring = createWeaponGradient(ctx, -26, 0, 34, 0, palette.metal);
+  ring.addColorStop(0, palette.edge);
+  ring.addColorStop(0.5, palette.metal);
+  ring.addColorStop(1, palette.guard);
+
+  ctx.strokeStyle = ring;
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  ctx.arc(18, 0, 22, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.strokeStyle = palette.glow;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(18, 0, 13, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.fillStyle = palette.edge;
+  for (let i = 0; i < 4; i += 1) {
+    const angle = (Math.PI / 2) * i;
+    ctx.save();
+    ctx.translate(18 + Math.cos(angle) * 24, Math.sin(angle) * 24);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.moveTo(0, -5);
+    ctx.lineTo(13, 0);
+    ctx.lineTo(0, 5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function drawFanSkin(ctx, visual) {
+  const palette = visual.fallback.palette;
+  ctx.fillStyle = palette.paper;
+  ctx.strokeStyle = palette.ink;
+  ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.moveTo(-5, 0);
+  ctx.arc(20, 0, 30, -0.75, 0.75);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.strokeStyle = palette.guard;
+  ctx.lineWidth = 2;
+  for (let i = -2; i <= 2; i += 1) {
+    const angle = i * 0.28;
+    ctx.beginPath();
+    ctx.moveTo(-5, 0);
+    ctx.lineTo(20 + Math.cos(angle) * 28, Math.sin(angle) * 28);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = palette.seal;
+  ctx.beginPath();
+  ctx.arc(24, 0, 5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = palette.guard;
+  ctx.beginPath();
+  ctx.arc(-5, 0, 4, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 function drawGrip(ctx, x, length, palette = {}) {

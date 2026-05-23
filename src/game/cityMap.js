@@ -1,40 +1,9 @@
 export const SUZHOU_CITY_MAP = {
   cityBounds: { x: -1900, y: -1900, width: 3800, height: 3800 },
-  roads: [
-    { id: 'pingjiang-road', kind: 'street', x: 760, y: -1500, width: 150, height: 1300 },
-    { id: 'pingjiang-cross-north', kind: 'lane', x: 520, y: -1280, width: 640, height: 96 },
-    { id: 'pingjiang-cross-south', kind: 'lane', x: 430, y: -760, width: 760, height: 92 },
-    { id: 'well-main-street', kind: 'street', x: 100, y: -520, width: 150, height: 1040 },
-    { id: 'well-square', kind: 'square', x: -90, y: -130, width: 520, height: 420 },
-    { id: 'well-to-panmen-lane', kind: 'street', x: -980, y: 500, width: 1320, height: 130 },
-    { id: 'panmen-court', kind: 'square', x: -1500, y: 720, width: 700, height: 520 },
-    { id: 'panmen-gate-road', kind: 'street', x: -1220, y: 560, width: 150, height: 640 }
-  ],
-  canals: [
-    { id: 'pingjiang-canal', x: 560, y: -1560, width: 90, height: 1420 },
-    { id: 'central-canal', x: 330, y: -620, width: 86, height: 1080 },
-    { id: 'south-moat', x: -1780, y: 1180, width: 2860, height: 170 },
-    { id: 'west-moat', x: -1780, y: -1380, width: 155, height: 2700 }
-  ],
-  bridges: [
-    { id: 'pingjiang-north-bridge', x: 525, y: -1274, width: 150, height: 88 },
-    { id: 'pingjiang-south-bridge', x: 520, y: -754, width: 150, height: 86 },
-    { id: 'well-stone-bridge', x: 312, y: -36, width: 130, height: 86 },
-    { id: 'panmen-water-gate-bridge', x: -1235, y: 1140, width: 210, height: 240 }
-  ],
-  buildings: [
-    { id: 'old-street-shops-west', kind: 'shops', x: 670, y: -1510, width: 70, height: 1180 },
-    { id: 'old-street-shops-east', kind: 'shops', x: 930, y: -1450, width: 220, height: 520 },
-    { id: 'old-street-houses-east', kind: 'houses', x: 940, y: -850, width: 240, height: 430 },
-    { id: 'garden-wall-north', kind: 'garden', x: -180, y: -720, width: 450, height: 120 },
-    { id: 'garden-wall-east', kind: 'garden', x: 430, y: -520, width: 160, height: 620 },
-    { id: 'well-houses-west', kind: 'houses', x: -330, y: -460, width: 260, height: 320 },
-    { id: 'well-houses-south', kind: 'houses', x: -270, y: 320, width: 530, height: 150 },
-    { id: 'panmen-wall-west', kind: 'wall', x: -1600, y: 540, width: 170, height: 780 },
-    { id: 'panmen-wall-south', kind: 'wall', x: -1580, y: 1020, width: 840, height: 170 },
-    { id: 'panmen-tower', kind: 'tower', x: -1320, y: 700, width: 330, height: 250 },
-    { id: 'panmen-water-wall', kind: 'wall', x: -920, y: 920, width: 180, height: 330 }
-  ],
+  roads: [],
+  canals: [],
+  bridges: [],
+  buildings: [],
   landmarks: {
     'old-street': { id: 'old-street', title: '平江路老街', x: 835, y: -1110 },
     'ancient-well': { id: 'ancient-well', title: '古井广场', x: 145, y: 60 },
@@ -68,16 +37,7 @@ export const SUZHOU_CITY_MAP = {
       { x: -900, y: 620 }
     ]
   },
-  decorations: [
-    { type: 'willow', x: 520, y: -1370 },
-    { type: 'willow', x: 455, y: -560 },
-    { type: 'lantern', x: 880, y: -1385 },
-    { type: 'lantern', x: 880, y: -840 },
-    { type: 'boat', x: 585, y: -430 },
-    { type: 'boat', x: -1540, y: 1215 },
-    { type: 'stone', x: 40, y: 250 },
-    { type: 'tree', x: -1250, y: 630 }
-  ]
+  decorations: []
 };
 
 export function getLandmarkPosition(id) {

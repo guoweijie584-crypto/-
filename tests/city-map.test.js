@@ -6,8 +6,7 @@ import {
   getPassableSpawnPoint,
   getStageObjectivePoints,
   isBlockedCircle,
-  isSegmentBlocked,
-  resolveBlockedCircle
+  isSegmentBlocked
 } from '../src/game/cityMap.js';
 
 describe('suzhou city map', () => {
@@ -17,11 +16,19 @@ describe('suzhou city map', () => {
     expect(getLandmarkPosition('city-tower')).toMatchObject({ title: '盘门水陆城门' });
   });
 
-  it('blocks canals and buildings but allows bridge and road points', () => {
-    expect(isBlockedCircle(580, -1000, 18)).toBe(true);
-    expect(isBlockedCircle(560, -1230, 18)).toBe(false);
-    expect(isBlockedCircle(700, -1000, 18)).toBe(true);
-    expect(isBlockedCircle(835, -1000, 18)).toBe(false);
+  it('has no obstacle geometry inside the city bounds', () => {
+    expect(SUZHOU_CITY_MAP.roads).toEqual([]);
+    expect(SUZHOU_CITY_MAP.canals).toEqual([]);
+    expect(SUZHOU_CITY_MAP.bridges).toEqual([]);
+    expect(SUZHOU_CITY_MAP.buildings).toEqual([]);
+    expect(SUZHOU_CITY_MAP.decorations).toEqual([]);
+  });
+
+  it('only treats out-of-bounds positions as blocked', () => {
+    expect(isBlockedCircle(0, 0, 18)).toBe(false);
+    expect(isBlockedCircle(580, -1000, 18)).toBe(false);
+    expect(isBlockedCircle(700, -1000, 18)).toBe(false);
+    expect(isBlockedCircle(-9999, 0, 18)).toBe(true);
   });
 
   it('places objective points on passable city areas', () => {
@@ -40,13 +47,8 @@ describe('suzhou city map', () => {
     vi.restoreAllMocks();
   });
 
-  it('detects projectile paths through walls and resolves entities out of buildings', () => {
-    expect(isSegmentBlocked(835, -1000, 960, -1000, 8)).toBe(true);
+  it('reports segments inside the bounds as unblocked', () => {
+    expect(isSegmentBlocked(835, -1000, 960, -1000, 8)).toBe(false);
     expect(isSegmentBlocked(835, -1110, 835, -1040, 8)).toBe(false);
-
-    const enemy = { x: 700, y: -1000, radius: 18 };
-    expect(isBlockedCircle(enemy.x, enemy.y, enemy.radius)).toBe(true);
-    expect(resolveBlockedCircle(enemy, enemy.radius)).toBe(true);
-    expect(isBlockedCircle(enemy.x, enemy.y, enemy.radius)).toBe(false);
   });
 });

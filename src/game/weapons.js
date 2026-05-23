@@ -1,4 +1,4 @@
-export const WEAPON_IDS = ['sword', 'blade', 'spear'];
+export const WEAPON_IDS = ['sword', 'blade', 'spear', 'daggers', 'ring', 'fan'];
 
 export const WEAPONS = {
   sword: {
@@ -46,6 +46,51 @@ export const WEAPONS = {
       wave: false
     },
     visual: { color: '#f4efe0', swingWidth: 7 }
+  },
+  daggers: {
+    id: 'daggers',
+    name: '双月匕',
+    trait: '近身连闪',
+    attack: {
+      style: 'twin-dagger-flurry',
+      cooldown: 12,
+      range: 78,
+      arc: Math.PI * 0.68,
+      damage: 25,
+      knockback: 8,
+      wave: false
+    },
+    visual: { color: '#58D5F6', swingWidth: 6 }
+  },
+  ring: {
+    id: 'ring',
+    name: '月轮刃',
+    trait: '环刃回旋',
+    attack: {
+      style: 'ring-cleave',
+      cooldown: 20,
+      range: 108,
+      arc: Math.PI * 1.05,
+      damage: 36,
+      knockback: 14,
+      wave: true
+    },
+    visual: { color: '#F6C85F', swingWidth: 11 }
+  },
+  fan: {
+    id: 'fan',
+    name: '符箓折扇',
+    trait: '符风封阵',
+    attack: {
+      style: 'talisman-fan-seal',
+      cooldown: 24,
+      range: 125,
+      arc: Math.PI * 0.95,
+      damage: 30,
+      knockback: 18,
+      wave: true
+    },
+    visual: { color: '#E85D75', swingWidth: 10 }
   }
 };
 
@@ -154,8 +199,122 @@ export const WEAPON_UPGRADES = {
       focus: { label: '生存', value: 80 },
       apply: (player) => { player.maxHp += 35; player.hp = Math.min(player.maxHp, player.hp + 45); }
     }
+  ],
+  daggers: [
+    {
+      id: 'daggers-shadow-step',
+      title: '月影贴身',
+      school: '身法',
+      tier: '连闪',
+      desc: '移动更快，短兵贴身更顺。',
+      effects: ['移动速度 +14%', '攻击冷却 -2 帧'],
+      tactic: '适合绕到妖影侧面，用短间隔连续压制。',
+      focus: { label: '机动', value: 92 },
+      apply: (player) => { player.speed *= 1.14; player.attackCooldownBonus += 2; }
+    },
+    {
+      id: 'daggers-cut-line',
+      title: '双月割雾',
+      school: '匕势',
+      tier: '破绽',
+      desc: '匕首伤害提升，能量回复更快。',
+      effects: ['全部伤害 +18%', '能量获取 +18%'],
+      tactic: '适合快速攒绝招，处理落单精英。',
+      focus: { label: '爆发', value: 86 },
+      apply: (player) => { player.damageMult *= 1.18; player.energyGainMult *= 1.18; }
+    },
+    {
+      id: 'daggers-blood-thread',
+      title: '回锋续息',
+      school: '续战',
+      tier: '回气',
+      desc: '击杀后更容易回血。',
+      effects: ['击杀回血概率 +22%', '最大生命 +12'],
+      tactic: '适合贴身风险高时保持血线。',
+      focus: { label: '续航', value: 78 },
+      apply: (player) => { player.vampRate += 0.22; player.maxHp += 12; player.hp = Math.min(player.maxHp, player.hp + 12); }
+    }
+  ],
+  ring: [
+    {
+      id: 'ring-wide-moon',
+      title: '满月回旋',
+      school: '轮刃',
+      tier: '回旋',
+      desc: '月轮范围扩大，更容易扫到侧翼。',
+      effects: ['攻击范围 +18%', '剑气强化 +20%'],
+      tactic: '适合在灯阵附近清理围上来的妖影。',
+      focus: { label: '范围', value: 90 },
+      apply: (player) => { player.rangeMult *= 1.18; player.swordWaveBoost += 0.2; }
+    },
+    {
+      id: 'ring-jade-edge',
+      title: '玉魄开锋',
+      school: '锋芒',
+      tier: '破甲',
+      desc: '月轮伤害和击退同步提升。',
+      effects: ['全部伤害 +20%', '击退距离 +15%'],
+      tactic: '适合把敌人推离自己，保持环刃距离。',
+      focus: { label: '压制', value: 84 },
+      apply: (player) => { player.damageMult *= 1.2; player.knockbackMult *= 1.15; }
+    },
+    {
+      id: 'ring-lunar-flow',
+      title: '环月流光',
+      school: '心法',
+      tier: '蓄势',
+      desc: '能量获取提升，冷却略短。',
+      effects: ['能量获取 +28%', '攻击冷却 -1 帧'],
+      tactic: '适合频繁释放绝招打断终局压力。',
+      focus: { label: '蓄能', value: 88 },
+      apply: (player) => { player.energyGainMult *= 1.28; player.attackCooldownBonus += 1; }
+    }
+  ],
+  fan: [
+    {
+      id: 'fan-seal-wind',
+      title: '符风定影',
+      school: '符法',
+      tier: '封阵',
+      desc: '符风范围扩大，击退更明显。',
+      effects: ['攻击范围 +16%', '击退距离 +20%'],
+      tactic: '适合拉开距离，守住古井和城楼入口。',
+      focus: { label: '控制', value: 89 },
+      apply: (player) => { player.rangeMult *= 1.16; player.knockbackMult *= 1.2; }
+    },
+    {
+      id: 'fan-red-seal',
+      title: '赤符照夜',
+      school: '咒印',
+      tier: '破邪',
+      desc: '符箓伤害和剑气强度提升。',
+      effects: ['全部伤害 +16%', '剑气强化 +25%'],
+      tactic: '适合隔着妖雾用符风清线。',
+      focus: { label: '远压', value: 86 },
+      apply: (player) => { player.damageMult *= 1.16; player.swordWaveBoost += 0.25; }
+    },
+    {
+      id: 'fan-paper-guard',
+      title: '纸阵护身',
+      school: '守势',
+      tier: '护体',
+      desc: '提升生命上限并立即回复。',
+      effects: ['最大生命 +30', '立即回复最多 35 点生命'],
+      tactic: '适合稳健打法，减少远程站位失误成本。',
+      focus: { label: '生存', value: 82 },
+      apply: (player) => { player.maxHp += 30; player.hp = Math.min(player.maxHp, player.hp + 35); }
+    }
   ]
 };
+
+function createDerivedUpgradePool(weaponId, level, label) {
+  return WEAPON_UPGRADES[weaponId].map((upgrade) => ({
+    ...upgrade,
+    id: `${upgrade.id}-l${level}`,
+    title: `${upgrade.title}${label}`,
+    tier: label
+  }));
+}
 
 export const WEAPON_LEVEL_UPGRADES = {
   sword: {
@@ -376,6 +535,21 @@ export const WEAPON_LEVEL_UPGRADES = {
         apply: (player) => { player.maxHp += 30; player.hp = Math.min(player.maxHp, player.hp + 30); player.vampRate += 0.15; player.speed *= 1.06; }
       }
     ]
+  },
+  daggers: {
+    2: WEAPON_UPGRADES.daggers,
+    3: createDerivedUpgradePool('daggers', 3, '进阶'),
+    4: createDerivedUpgradePool('daggers', 4, '绝学')
+  },
+  ring: {
+    2: WEAPON_UPGRADES.ring,
+    3: createDerivedUpgradePool('ring', 3, '进阶'),
+    4: createDerivedUpgradePool('ring', 4, '绝学')
+  },
+  fan: {
+    2: WEAPON_UPGRADES.fan,
+    3: createDerivedUpgradePool('fan', 3, '进阶'),
+    4: createDerivedUpgradePool('fan', 4, '绝学')
   }
 };
 

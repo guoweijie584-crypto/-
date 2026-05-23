@@ -99,4 +99,23 @@ describe('mountGame', () => {
 
     game.stop();
   });
+
+  it('emits sound hooks for selectable weapons and attacks', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const sound = { play: vi.fn() };
+    const game = mountGame(container, { sound });
+
+    game.setWeapon('fan');
+    expect(sound.play).toHaveBeenCalledWith('weaponSelect');
+
+    const { state } = game._debug;
+    state.player.attackTimer = 0;
+    const canvas = container.querySelector('#gameCanvas');
+    canvas.dispatchEvent(new MouseEvent('mousedown', { button: 0 }));
+    game.start();
+
+    expect(sound.play).toHaveBeenCalledWith('attack');
+    game.stop();
+  });
 });

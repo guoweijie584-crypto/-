@@ -261,6 +261,10 @@ h2 {
   gap: var(--space-sm);
 }
 
+.weapon-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .weapon-choice,
 .upgrade-choice {
   min-height: 56px;
@@ -271,6 +275,12 @@ h2 {
   justify-content: space-between;
   gap: var(--space-sm);
   border-radius: 8px;
+}
+
+.weapon-choice {
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
 }
 
 .upgrade-choice {

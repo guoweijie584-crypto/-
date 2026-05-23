@@ -104,16 +104,5 @@ export function createPlayer() {
 }
 
 export function createTerrain() {
-  const decorations = [];
-
-  for (let i = 0; i < 120; i += 1) {
-    decorations.push({
-      x: (Math.random() - 0.5) * MAP_SIZE,
-      y: (Math.random() - 0.5) * MAP_SIZE,
-      type: Math.random() > 0.3 ? 'grass' : 'flower',
-      color: Math.random() > 0.5 ? '#C9493D' : '#D7A84B'
-    });
-  }
-
-  return decorations;
+  return [];
 }

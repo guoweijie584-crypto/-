@@ -14,10 +14,12 @@ import {
 } from '../src/game/visualAssets.js';
 
 describe('visual asset manifest', () => {
-  it('defines modeled player actions and future spritesheet metadata', () => {
+  it('defines anime comic player actions and future spritesheet metadata', () => {
     const player = getPlayerVisual();
 
-    expect(player.style).toContain('2.5D');
+    expect(player.label).toContain('漫画');
+    expect(player.style).toContain('anime comic');
+    expect(player.fallback.mode).toBe('anime-comic-canvas');
     expect(player.actions).toEqual(PLAYER_ACTIONS);
     expect(player.sprite).toMatchObject({
       src: '/assets/characters/warrior-isometric-idle.png',
@@ -39,12 +41,16 @@ describe('visual asset manifest', () => {
     });
   });
 
-  it('defines three modeled weapon skins and combat effect fallbacks', () => {
-    ['sword', 'blade', 'spear'].forEach((weaponId) => {
+  it('defines six modeled weapon skins and combat effect fallbacks', () => {
+    ['sword', 'blade', 'spear', 'daggers', 'ring', 'fan'].forEach((weaponId) => {
       const visual = getWeaponVisual(weaponId);
       expect(visual.material).toBeTruthy();
       expect(visual.fallback.palette.glow).toBeTruthy();
     });
+
+    expect(getWeaponVisual('daggers').label).toContain('匕');
+    expect(getWeaponVisual('ring').label).toContain('轮');
+    expect(getWeaponVisual('fan').label).toContain('扇');
 
     expect(getEffectVisual('swordWave').label).toContain('剑气');
     expect(getEffectVisual('slashArc').label).toContain('挥砍');

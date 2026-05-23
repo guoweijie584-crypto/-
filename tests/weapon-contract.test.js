@@ -3,13 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { WEAPON_IDS, WEAPON_LEVEL_UPGRADES, WEAPON_UPGRADES, WEAPONS, getWeaponDefinition, getWeaponUpgrades } from '../src/game/weapons.js';
 
 describe('weapon contract', () => {
-  it('defines exactly three selectable weapons with distinct attack styles', () => {
-    expect(WEAPON_IDS).toEqual(['sword', 'blade', 'spear']);
+  it('defines six selectable weapons with distinct attack styles', () => {
+    expect(WEAPON_IDS).toEqual(['sword', 'blade', 'spear', 'daggers', 'ring', 'fan']);
     expect(Object.keys(WEAPONS).sort()).toEqual([...WEAPON_IDS].sort());
 
     const styles = WEAPON_IDS.map((id) => getWeaponDefinition(id).attack.style);
-    expect(new Set(styles).size).toBe(3);
-    expect(styles).toEqual(['sword-wave', 'broad-slash', 'thrust-dash']);
+    expect(new Set(styles).size).toBe(6);
+    expect(styles).toEqual(['sword-wave', 'broad-slash', 'thrust-dash', 'twin-dagger-flurry', 'ring-cleave', 'talisman-fan-seal']);
   });
 
   it('defines exactly three upgrades per weapon', () => {

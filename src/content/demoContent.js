@@ -18,6 +18,24 @@ export const demoContent = {
       name: '枪',
       trait: '突进穿刺',
       description: '枪如游龙，适合穿阵直取守将。'
+    },
+    {
+      id: 'daggers',
+      name: '双月匕',
+      trait: '近身连闪',
+      description: '双匕轻快，适合贴身连续破影。'
+    },
+    {
+      id: 'ring',
+      name: '月轮刃',
+      trait: '环刃回旋',
+      description: '月轮回旋，适合扫开侧翼妖影。'
+    },
+    {
+      id: 'fan',
+      name: '符箓折扇',
+      trait: '符风封阵',
+      description: '折扇引符，适合远距封阵控场。'
     }
   ],
   uiPlaceholders: {
