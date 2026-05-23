@@ -19,6 +19,9 @@ describe('renderShell', () => {
     expect(root.textContent).toContain('开始夜巡');
     expect(root.textContent).toContain('选择兵器');
     expect(root.textContent).toContain('选择功法');
+    expect(root.querySelector('#stage-panel')).toBeTruthy();
+    expect(root.querySelector('[data-hud="objective"]')).toBeTruthy();
+    expect(root.textContent).toContain('老街灯影阵');
     expect(root.textContent).toContain('AI 说书人');
     expect(root.textContent).toContain('文化线索待解锁');
     expect(root.textContent).toContain('江湖游历卡待生成');

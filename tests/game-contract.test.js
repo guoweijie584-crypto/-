@@ -57,6 +57,13 @@ describe('mountGame', () => {
     expect(snapshot).toHaveProperty('player');
     expect(snapshot).toHaveProperty('selectedWeapon', 'sword');
     expect(snapshot).toHaveProperty('weapon');
+    expect(snapshot).toHaveProperty('stage');
+    expect(snapshot.stage).toMatchObject({
+      id: 'old-street',
+      title: '老街灯影阵',
+      objective: { type: 'lamps', current: 0, target: 3 }
+    });
+    expect(snapshot.objectives).toMatchObject({ type: 'lamps', current: 0, target: 3 });
     expect(snapshot.weapon.attack.style).toBe('sword-wave');
     expect(snapshot.runStats.selectedUpgrades).toEqual([]);
     expect(snapshot).toHaveProperty('kills');

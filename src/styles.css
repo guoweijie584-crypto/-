@@ -156,6 +156,24 @@ h2 {
   padding: var(--space-md);
 }
 
+.stage-panel {
+  display: grid;
+  gap: var(--space-xs);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid rgba(244, 239, 224, 0.12);
+  font-size: 12px;
+}
+
+.stage-panel span {
+  color: var(--color-support);
+  font-weight: 700;
+}
+
+.stage-panel strong {
+  color: var(--color-accent);
+  font-size: 13px;
+}
+
 .meter {
   display: flex;
   justify-content: space-between;

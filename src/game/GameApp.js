@@ -1,7 +1,9 @@
 import { distance, spawnParticles, spawnText } from './effects.js';
-import { MAP_SIZE, createInitialGameState, createTerrain } from './gameState.js';
+import { createEnemy } from './enemies.js';
+import { MAP_SIZE, createEchoFragments, createInitialGameState, createTalismans } from './gameState.js';
 import { createInputController } from './input.js';
 import { render } from './rendering.js';
+import { STAGES, createStageProgress, getStageDefinition, getStageSnapshot } from './stages.js';
 import { getWeaponDefinition, getWeaponUpgrades } from './weapons.js';
 
 export function mountGame(container, options = {}) {
@@ -57,7 +59,14 @@ export function mountGame(container, options = {}) {
       runStats: {
         selectedWeapon: state.runStats.selectedWeapon,
         selectedUpgrades: state.runStats.selectedUpgrades,
-        damageTaken: state.runStats.damageTaken
+        damageTaken: state.runStats.damageTaken,
+        stages: state.runStats.stages,
+        echoFragments: state.runStats.echoFragments,
+        bossPhaseReached: state.runStats.bossPhaseReached
+      },
+      stage: getStageSnapshot(state.currentStageIndex, state.objectives.progress),
+      objectives: {
+        ...state.objectives.progress
       },
       kills: state.kills,
       gameTime: state.gameTime
@@ -136,52 +145,13 @@ export function mountGame(container, options = {}) {
 
   function spawnEnemy() {
     const { player } = state;
+    const stage = getStageDefinition(state.currentStageId);
     const angle = Math.random() * Math.PI * 2;
     const dist = Math.max(canvas.width, canvas.height) / 2 + 150;
     const x = player.x + Math.cos(angle) * dist;
     const y = player.y + Math.sin(angle) * dist;
-    const rand = Math.random();
-    let enemyType;
-    let hp;
-    let speed;
-    let expValue;
-    let behavior;
-
-    if (rand < 0.35) {
-      enemyType = 'neutral_animal';
-      hp = 20;
-      speed = 2.8;
-      expValue = 5;
-      behavior = 'flee';
-    } else if (rand < 0.7) {
-      enemyType = 'silly_dog';
-      hp = 30 + state.gameTime * 0.5;
-      speed = 3.2;
-      expValue = 15;
-      behavior = 'chase';
-    } else {
-      enemyType = 'fierce_monster';
-      hp = 150 + state.gameTime * 3;
-      speed = 1.3;
-      expValue = 40;
-      behavior = 'chase';
-    }
-
-    const radius = Math.min(60, 15 + Math.sqrt(hp) * 1.5);
-    state.enemies.push({
-      x,
-      y,
-      type: enemyType,
-      hp,
-      maxHp: hp,
-      speed,
-      radius,
-      expValue,
-      hitCooldown: 0,
-      behavior,
-      targetAngle: Math.random() * Math.PI * 2,
-      seed: Math.random()
-    });
+    const enemyType = stage.enemies[Math.floor(Math.random() * stage.enemies.length)];
+    state.enemies.push(createEnemy(enemyType, { x, y }, state.gameTime));
   }
 
   function performAttack() {
@@ -229,6 +199,24 @@ export function mountGame(container, options = {}) {
       }
     });
 
+    state.objectives.talismans.forEach((talisman) => {
+      if (talisman.broken) return;
+      if (distance(player.x, player.y, talisman.x, talisman.y) <= realRange + 22) {
+        let angleDiff = Math.atan2(talisman.y - player.y, talisman.x - player.x) - aimAngle;
+        while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+        while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+        if (Math.abs(angleDiff) <= attack.arc / 2) {
+          talisman.hp -= realDamage;
+          spawnParticles(state, talisman.x, talisman.y, '#D7A84B', 6, 3, 0.05);
+          if (talisman.hp <= 0) {
+            talisman.broken = true;
+            spawnText(state, talisman.x, talisman.y - 28, '护符破', '#D7A84B', 18);
+          }
+          updateObjectiveProgress();
+        }
+      }
+    });
+
     if (player.hasWeapon && (attack.wave || player.hasSwordWave)) {
       projectiles.push({
         type: 'wave',
@@ -254,7 +242,7 @@ export function mountGame(container, options = {}) {
     if (enemy.hp <= 0) {
       state.kills += 1;
       player.exp += enemy.expValue;
-      player.energy = Math.min(player.maxEnergy, player.energy + (enemy.type === 'neutral_animal' ? 2 : 5) * player.energyGainMult);
+      player.energy = Math.min(player.maxEnergy, player.energy + 6 * player.energyGainMult);
       spawnParticles(state, enemy.x, enemy.y, '#C9493D', 15, 6);
 
       if (player.vampRate > 0 && Math.random() < player.vampRate) {
@@ -263,6 +251,7 @@ export function mountGame(container, options = {}) {
       }
 
       state.enemies = state.enemies.filter((item) => item !== enemy);
+      updateObjectiveProgress();
       checkLevelUp();
       updateUI();
     }
@@ -358,12 +347,109 @@ export function mountGame(container, options = {}) {
     }
 
     updateDroppedWeapons();
+    updateObjectives();
     updateProjectiles();
     updateEnemies();
     updateParticles();
 
     camera.x += (player.x - canvas.width / 2 - camera.x) * 0.1;
     camera.y += (player.y - canvas.height / 2 - camera.y) * 0.1;
+  }
+
+  function updateObjectives() {
+    if (state.currentStageId === 'old-street') {
+      state.objectives.lamps.forEach((lamp) => {
+        if (!lamp.lit && state.kills >= 2 && distance(state.player.x, state.player.y, lamp.x, lamp.y) < 70) {
+          lamp.lit = true;
+          spawnText(state, lamp.x, lamp.y - 34, '灯明', '#D7A84B', 18);
+          spawnParticles(state, lamp.x, lamp.y, '#D7A84B', 16, 5, 0.04);
+          updateObjectiveProgress();
+        }
+      });
+    }
+
+    if (state.currentStageId === 'ancient-well') {
+      if (state.objectives.echoFragments.length === 0) {
+        state.objectives.echoFragments = createEchoFragments();
+      }
+
+      state.objectives.echoFragments.forEach((fragment) => {
+        if (!fragment.collected && distance(state.player.x, state.player.y, fragment.x, fragment.y) < 42) {
+          fragment.collected = true;
+          state.runStats.echoFragments += 1;
+          spawnText(state, fragment.x, fragment.y - 26, '回声+1', '#54C6B2', 16);
+          spawnParticles(state, fragment.x, fragment.y, '#54C6B2', 14, 4, 0.05);
+          updateObjectiveProgress();
+        }
+      });
+
+      if (Math.floor(state.gameTime * 60) % 130 === 0) {
+        state.objectives.echoWaves.push({
+          x: state.player.x + (Math.random() - 0.5) * 360,
+          y: state.player.y + (Math.random() - 0.5) * 280,
+          radius: 12,
+          maxRadius: 160,
+          duration: 90,
+          hit: false
+        });
+      }
+    }
+
+    if (state.currentStageId === 'city-tower' && state.objectives.talismans.length === 0) {
+      state.objectives.talismans = createTalismans();
+      updateObjectiveProgress();
+    }
+  }
+
+  function updateObjectiveProgress() {
+    const progress = state.objectives.progress;
+    if (state.currentStageId === 'old-street') {
+      progress.current = state.objectives.lamps.filter((lamp) => lamp.lit).length;
+    } else if (state.currentStageId === 'ancient-well') {
+      progress.current = state.objectives.echoFragments.filter((fragment) => fragment.collected).length;
+    } else if (state.currentStageId === 'city-tower') {
+      progress.current = state.objectives.talismans.filter((talisman) => talisman.broken).length;
+    }
+    progress.complete = progress.current >= progress.target;
+    emit('game:objective-updated', getSnapshot());
+    if (progress.complete) {
+      advanceStage();
+    }
+  }
+
+  function advanceStage() {
+    const completedStage = state.currentStageId;
+    state.stageStatus[state.currentStageIndex].complete = true;
+    if (!state.runStats.stages.some((stage) => stage.id === completedStage)) {
+      state.runStats.stages.push({
+        id: completedStage,
+        title: getStageDefinition(completedStage).title,
+        complete: true
+      });
+    }
+
+    if (state.currentStageIndex >= STAGES.length - 1) {
+      state.objectives.progress.complete = true;
+      state.gameState = 'pre-boss';
+      emit('game:stage-changed', getSnapshot());
+      updateUI();
+      return;
+    }
+
+    state.currentStageIndex += 1;
+    state.currentStageId = STAGES[state.currentStageIndex].id;
+    state.objectives.progress = createStageProgress(state.currentStageId);
+    state.enemies = [];
+    if (state.currentStageId === 'ancient-well') {
+      state.objectives.echoFragments = createEchoFragments();
+      state.objectives.echoWaves = [];
+    }
+    if (state.currentStageId === 'city-tower') {
+      state.objectives.talismans = createTalismans();
+    }
+    spawnText(state, state.player.x, state.player.y - 70, getStageDefinition(state.currentStageId).title, '#D7A84B', 22);
+    emit('game:stage-changed', getSnapshot());
+    updateUI();
   }
 
   function updateDroppedWeapons() {
@@ -434,6 +520,15 @@ export function mountGame(container, options = {}) {
         projectile.duration -= 1;
       }
     });
+    state.objectives.echoWaves.forEach((wave) => {
+      wave.radius += 2.4;
+      wave.duration -= 1;
+      if (!wave.hit && distance(wave.x, wave.y, state.player.x, state.player.y) < wave.radius + state.player.radius && wave.radius > 36) {
+        wave.hit = true;
+        hurtPlayer(8);
+      }
+    });
+    state.objectives.echoWaves = state.objectives.echoWaves.filter((wave) => wave.duration > 0 && wave.radius < wave.maxRadius);
     state.projectiles = state.projectiles.filter((projectile) => projectile.duration > 0);
   }
 
@@ -442,24 +537,45 @@ export function mountGame(container, options = {}) {
     state.enemies.forEach((enemy) => {
       if (enemy.hitCooldown > 0) enemy.hitCooldown -= 1;
 
-      if (enemy.behavior === 'chase') {
+      if (enemy.behavior === 'fast-chase') {
         const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
         enemy.x += Math.cos(angle) * enemy.speed;
         enemy.y += Math.sin(angle) * enemy.speed;
 
         if (distance(enemy.x, enemy.y, player.x, player.y) < enemy.radius + player.radius && enemy.hitCooldown === 0) {
-          hurtPlayer(enemy.type === 'fierce_monster' ? 25 : 12);
+          hurtPlayer(enemy.damage);
           enemy.hitCooldown = 45;
         }
-      } else if (enemy.behavior === 'flee') {
-        const d = distance(enemy.x, enemy.y, player.x, player.y);
-        if (d < 300) {
-          enemy.targetAngle = Math.atan2(enemy.y - player.y, enemy.x - player.x);
-        } else if (Math.random() < 0.03) {
-          enemy.targetAngle = Math.random() * Math.PI * 2;
+      } else if (enemy.behavior === 'surround') {
+        const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x) + Math.sin(state.gameTime + enemy.seed * 6) * 0.45;
+        enemy.x += Math.cos(angle) * enemy.speed;
+        enemy.y += Math.sin(angle) * enemy.speed;
+        if (distance(enemy.x, enemy.y, player.x, player.y) < enemy.radius + player.radius && enemy.hitCooldown === 0) {
+          hurtPlayer(enemy.damage);
+          enemy.hitCooldown = 50;
         }
-        enemy.x += Math.cos(enemy.targetAngle) * enemy.speed;
-        enemy.y += Math.sin(enemy.targetAngle) * enemy.speed;
+      } else if (enemy.behavior === 'ripple-ranged') {
+        const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+        const d = distance(enemy.x, enemy.y, player.x, player.y);
+        if (d > 260) {
+          enemy.x += Math.cos(angle) * enemy.speed;
+          enemy.y += Math.sin(angle) * enemy.speed;
+        } else {
+          enemy.x -= Math.cos(angle) * enemy.speed * 0.45;
+          enemy.y -= Math.sin(angle) * enemy.speed * 0.45;
+        }
+        enemy.actionTimer -= 1;
+        if (enemy.actionTimer <= 0) {
+          enemy.actionTimer = 95;
+          state.objectives.echoWaves.push({
+            x: enemy.x,
+            y: enemy.y,
+            radius: 12,
+            maxRadius: 145,
+            duration: 80,
+            hit: false
+          });
+        }
       }
     });
   }

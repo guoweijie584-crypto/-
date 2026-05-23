@@ -11,6 +11,7 @@ export function render(ctx, canvas, state, input) {
   ctx.translate(-camera.x, -camera.y);
 
   drawWorld(ctx, canvas, camera, terrain);
+  drawObjectives(ctx, state);
   drawDroppedWeapons(ctx, state, droppedWeapons);
   drawProjectiles(ctx, projectiles);
   enemies.forEach((enemy) => drawEnemy(ctx, state, enemy));
@@ -18,6 +19,76 @@ export function render(ctx, canvas, state, input) {
   drawParticles(ctx, particles);
   drawDamageTexts(ctx, damageTexts);
 
+  ctx.restore();
+}
+
+function drawObjectives(ctx, state) {
+  state.objectives.lamps.forEach((lamp) => drawLamp(ctx, lamp));
+  state.objectives.echoFragments.forEach((fragment) => drawEcho(ctx, fragment));
+  state.objectives.echoWaves.forEach((wave) => drawEchoWave(ctx, wave));
+  state.objectives.talismans.forEach((talisman) => drawTalisman(ctx, talisman));
+}
+
+function drawLamp(ctx, lamp) {
+  ctx.save();
+  ctx.translate(lamp.x, lamp.y);
+  ctx.shadowBlur = lamp.lit ? 20 : 0;
+  ctx.shadowColor = '#D7A84B';
+  ctx.fillStyle = lamp.lit ? '#D7A84B' : '#25342C';
+  ctx.strokeStyle = '#D7A84B';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(0, 0, 16, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = '#101613';
+  ctx.fillRect(-3, 12, 6, 28);
+  ctx.restore();
+}
+
+function drawEcho(ctx, fragment) {
+  if (fragment.collected) return;
+  ctx.save();
+  ctx.translate(fragment.x, fragment.y);
+  ctx.shadowBlur = 16;
+  ctx.shadowColor = '#54C6B2';
+  ctx.fillStyle = '#54C6B2';
+  ctx.beginPath();
+  ctx.moveTo(0, -18);
+  ctx.lineTo(14, 0);
+  ctx.lineTo(0, 18);
+  ctx.lineTo(-14, 0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawEchoWave(ctx, wave) {
+  ctx.save();
+  ctx.strokeStyle = `rgba(84, 198, 178, ${Math.max(0.16, wave.duration / 100)})`;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(wave.x, wave.y, wave.radius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawTalisman(ctx, talisman) {
+  if (talisman.broken) return;
+  ctx.save();
+  ctx.translate(talisman.x, talisman.y);
+  ctx.fillStyle = '#f4efe0';
+  ctx.strokeStyle = '#D7A84B';
+  ctx.lineWidth = 3;
+  ctx.fillRect(-14, -24, 28, 48);
+  ctx.strokeRect(-14, -24, 28, 48);
+  ctx.strokeStyle = '#C9493D';
+  ctx.beginPath();
+  ctx.moveTo(-7, -8);
+  ctx.lineTo(7, 8);
+  ctx.moveTo(7, -8);
+  ctx.lineTo(-7, 8);
+  ctx.stroke();
   ctx.restore();
 }
 
@@ -159,13 +230,15 @@ export function drawEnemy(ctx, state, enemy) {
   ctx.save();
   ctx.translate(enemy.x, enemy.y);
 
-  const lookAngle = enemy.behavior === 'chase'
+  const lookAngle = enemy.behavior === 'fast-chase' || enemy.behavior === 'surround' || enemy.behavior === 'ripple-ranged'
     ? Math.atan2(player.y - enemy.y, player.x - enemy.x)
     : enemy.targetAngle || 0;
   ctx.rotate(lookAngle);
 
-  if (enemy.type === 'neutral_animal') {
-    ctx.fillStyle = '#f3f0df';
+  if (enemy.type === 'lamp-shadow') {
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = '#D7A84B';
+    ctx.fillStyle = '#2b2113';
     ctx.beginPath();
     ctx.arc(0, 0, enemy.radius, 0, Math.PI * 2);
     ctx.fill();
@@ -173,18 +246,17 @@ export function drawEnemy(ctx, state, enemy) {
     ctx.beginPath();
     ctx.ellipse(enemy.radius, 0, 6, 8, 0, 0, Math.PI * 2);
     ctx.fill();
-  } else if (enemy.type === 'silly_dog') {
-    ctx.fillStyle = '#73533b';
+  } else if (enemy.type === 'paper-doll') {
+    ctx.fillStyle = '#f4efe0';
+    ctx.strokeStyle = '#C9493D';
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(0, 0, enemy.radius, 0, Math.PI * 2);
+    ctx.rect(-enemy.radius * 0.75, -enemy.radius, enemy.radius * 1.5, enemy.radius * 2);
     ctx.fill();
-    ctx.fillStyle = '#D7A84B';
-    ctx.beginPath();
-    ctx.ellipse(enemy.radius, 0, 8, 4, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.stroke();
   } else {
     ctx.shadowBlur = 15;
-    ctx.shadowColor = '#C9493D';
+    ctx.shadowColor = '#54C6B2';
     ctx.fillStyle = '#25342C';
     ctx.beginPath();
     ctx.arc(0, 0, enemy.radius, 0, Math.PI * 2);

@@ -1,4 +1,5 @@
 import { getWeaponDefinition } from './weapons.js';
+import { STAGE_IDS, createStageProgress } from './stages.js';
 
 export const MAP_SIZE = 4000;
 
@@ -18,6 +19,16 @@ export function createInitialGameState(initial = {}) {
     gameState: 'playing',
     selectedWeapon,
     weapon: getWeaponDefinition(selectedWeapon),
+    currentStageIndex: 0,
+    currentStageId: STAGE_IDS[0],
+    stageStatus: STAGE_IDS.map((id) => ({ id, complete: false })),
+    objectives: {
+      progress: createStageProgress(STAGE_IDS[0]),
+      lamps: createLamps(),
+      echoFragments: [],
+      echoWaves: [],
+      talismans: []
+    },
     kills: 0,
     gameTime: 0,
     spawnTimer: 0,
@@ -29,7 +40,10 @@ export function createInitialGameState(initial = {}) {
     runStats: {
       selectedWeapon,
       selectedUpgrades: [],
-      damageTaken: 0
+      damageTaken: 0,
+      stages: [],
+      echoFragments: 0,
+      bossPhaseReached: 0
     },
     enemies: [],
     droppedWeapons: [],
@@ -37,6 +51,32 @@ export function createInitialGameState(initial = {}) {
     particles: [],
     damageTexts: []
   };
+}
+
+export function createLamps() {
+  return [
+    { id: 'lamp-1', x: -180, y: -140, lit: false },
+    { id: 'lamp-2', x: 180, y: -120, lit: false },
+    { id: 'lamp-3', x: 20, y: 190, lit: false }
+  ];
+}
+
+export function createEchoFragments() {
+  return [
+    { id: 'echo-1', x: -220, y: -80, collected: false },
+    { id: 'echo-2', x: 210, y: -120, collected: false },
+    { id: 'echo-3', x: -80, y: 220, collected: false },
+    { id: 'echo-4', x: 260, y: 190, collected: false },
+    { id: 'echo-5', x: 10, y: 0, collected: false }
+  ];
+}
+
+export function createTalismans() {
+  return [
+    { id: 'talisman-1', x: -240, y: 80, hp: 60, maxHp: 60, broken: false },
+    { id: 'talisman-2', x: 0, y: -220, hp: 60, maxHp: 60, broken: false },
+    { id: 'talisman-3', x: 240, y: 80, hp: 60, maxHp: 60, broken: false }
+  ];
 }
 
 export function createPlayer() {

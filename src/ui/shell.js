@@ -29,6 +29,10 @@ export function renderShell(root, state, content) {
       </header>
 
       <aside class="combat-hud" aria-label="战斗状态">
+        <div id="stage-panel" class="stage-panel" data-panel="stage">
+          <span data-hud="stage-title">老街灯影阵</span>
+          <strong data-hud="objective">击退妖影，点亮 3 盏灯 0 / 3</strong>
+        </div>
         <div class="meter">
           <span>生命</span>
           <strong data-hud="hp">100 / 100</strong>
@@ -134,6 +138,10 @@ export function renderShell(root, state, content) {
     shell.querySelector('[data-hud="energy"]').textContent = `${snapshot.player.energy} / ${snapshot.player.maxEnergy}`;
     shell.querySelector('[data-hud="level"]').textContent = snapshot.player.level;
     shell.querySelector('[data-hud="kills"]').textContent = snapshot.kills;
+    if (snapshot.stage?.objective) {
+      shell.querySelector('[data-hud="stage-title"]').textContent = snapshot.stage.title;
+      shell.querySelector('[data-hud="objective"]').textContent = `${snapshot.stage.objective.label} ${snapshot.stage.objective.current} / ${snapshot.stage.objective.target}`;
+    }
   }
 
   function updateWeapon(weaponId) {
